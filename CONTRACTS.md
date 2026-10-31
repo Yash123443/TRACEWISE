@@ -162,3 +162,11 @@ On a learner's first attempt at a concept, history `before` shows mastery 0.5 as
 ## AI evaluation
 
 An evaluation with source `llm` means AI interpreted the explanation into pointer operations and a deterministic simulator verified the result. Source `rule` with an `AI interpretation was unavailable` sentence indicates rule-based fallback. Mastery never depends on unverified AI output. The development server proxies `/api/ai/interpret`; its API key remains server-side in `.env`, and its default model is `gemini-flash-lite-latest`. The AI path works only under `npm run dev` or `npm run preview`.
+
+## Teacher analytics
+
+Teacher analytics have `dataSource: "simulated"`; they never expose private learner records. A learner needs attention when their assessed average is below 0.4, when three or more assessed concepts are below 0.4, or when they have a recurring misconception. `attentionThreshold` is 0.4. Concepts with no assessed learners are omitted rather than assigned a fake average.
+
+## Demo samples
+
+Demo samples are labelled sample responses, not real student data, and their expected statuses are checked against the rule evaluator.

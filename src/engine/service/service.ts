@@ -2,6 +2,8 @@ import { z } from 'zod'
 import type { EvaluationResult, Operation, Question, Trace } from '../contracts/index.js'
 import { concepts, getQuestion as findQuestion, questions } from '../data/index.js'
 import { evaluateWithRules } from '../evaluation/index.js'
+import { aggregateClass } from '../demo/analytics.js'
+import { SIMULATED_CLASS } from '../demo/classData.js'
 import { deriveStatus, MODEL_VERSION, updateMastery, updateMisconception } from '../learner/index.js'
 import { pickReviewQuestion, scheduleReview, selectNextQuestion, splitRevisionQueue } from '../selector/index.js'
 import { runReplay as replay } from '../simulator/index.js'
@@ -70,7 +72,7 @@ export function createTracewiseService({ storage = new LocalStorageAdapter(), ev
     async getQuestion(questionId) { const question = findQuestion(questionId); if (!question) throw new ServiceError('QUESTION_NOT_FOUND', 'The requested question was not found.', { questionId }); return question },
     async getMisconceptions(learnerId) { return Object.values(load(learnerId).misconceptions) },
     async getHistory(learnerId) { return [...load(learnerId).history].reverse() },
-    async getTeacherAnalytics() { throw new ServiceError('NOT_IMPLEMENTED', 'Teacher analytics are not implemented yet.') },
+    async getTeacherAnalytics() { return aggregateClass(SIMULATED_CLASS) },
     runReplay(operations: Operation[], initial?) { return replay(operations, initial) },
     async resetDemo(learnerId) { storage.remove(storageKey(learnerId)); storage.remove(offsetKey) },
     async advanceDemoTime(days) { const value = offset() + days; storage.set(offsetKey, String(value)); return demoNow() },
