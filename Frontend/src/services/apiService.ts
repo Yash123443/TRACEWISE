@@ -5,6 +5,7 @@ import type { SubmitAnswerResult } from '@engine/service'
 import type { ReplayInitialState } from '@engine/simulator'
 import type { Operation } from '@engine/contracts'
 import type { LearningQuestion } from '../types/tracewise'
+import { guidedQuestionIds } from './practicePath'
 
 export interface SubmitTraceResponse extends SubmitAnswerResult {
   submissionId: string
@@ -44,10 +45,15 @@ export const TracewiseApi = {
       // Ambiguous answers count as attempts in diagnostic status, but remain revisitable.
       return (await service.getDiagnosticQuestions()).map(mapQuestion)
     }
-    const next = await service.getNextQuestion(learnerId, await demoNow())
-    const question = mapQuestion(next.question)
-    return [{ ...question, recommendationReason: next.reason }]
+    return guidedQuestionIds.flatMap((id) => {
+      const question = questions.find((item) => item.id === id)
+      return question ? [mapQuestion(question)] : []
+    })
   },
+  getPracticeQuestions: async () => guidedQuestionIds.flatMap((id) => {
+    const question = questions.find((item) => item.id === id)
+    return question ? [mapQuestion(question)] : []
+  }),
   getQuestion: async (id: string) => mapQuestion(await service.getQuestion(id)),
   getDiagnosticStatus: () => service.getDiagnosticStatus(learnerId),
   getConcepts: () => service.getConcepts(learnerId),

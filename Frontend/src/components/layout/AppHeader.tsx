@@ -32,6 +32,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     { tab: 'concept-map', label: 'Concept Map' },
     { tab: 'revision', label: 'Revision', badge: dueRevisionCount },
     { tab: 'teacher', label: 'Teacher' },
+    { tab: 'practice', label: 'Practice (20)' },
   ];
 
   return (

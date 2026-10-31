@@ -3,6 +3,7 @@ import { TracewiseApi } from '../../services/apiService'
 import { Card, CardBody } from '../common/Card'
 import { Button } from '../common/Button'
 import { Badge } from '../common/Badge'
+import { GuidedPracticePath } from './GuidedPracticePath'
 import {
   Brain,
   CheckCircle2,
@@ -293,6 +294,12 @@ export function StudentOverviewScreen({
           })}
         </div>
       </section>
+
+      <GuidedPracticePath
+        history={history}
+        getConceptName={TracewiseApi.conceptName}
+        onStart={onStartLearning}
+      />
 
       {/* 5. Dual Section: Revision Queue & Recorded History */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

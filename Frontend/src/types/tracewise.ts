@@ -5,7 +5,8 @@ export type NavigationTab =
   | 'workbench'
   | 'concept-map'
   | 'revision'
-  | 'teacher';
+  | 'teacher'
+  | 'practice';
 
 export type MasteryStatus = 'solidified' | 'in-progress' | 'needs-review' | 'unattempted';
 
