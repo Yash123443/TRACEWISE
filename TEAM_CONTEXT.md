@@ -3,7 +3,7 @@
 - Hackathon: Product Space Agentic AI Hackathon. Deadline: 31 Oct 2026, 11:59 PM IST.
 - Scoring: Wispr Flow 20%, Prototype/UX 20%, AI integration 20%, Problem understanding 15%, LinkedIn 15%, Innovation 10%.
 - Split: Person A owns `src/ui` only; Person B owns `src/engine` only.
-- There is no backend. The engine consists of TypeScript functions and saves data to browser `localStorage` behind a storage interface.
+- There is no HTTP backend. The browser engine service in `src/engine/service` connects the UI-facing service contract to deterministic engine functions and persists learner profiles to browser `localStorage` through a storage interface.
 - The UI calls the functions listed in [CONTRACTS.md](./CONTRACTS.md) and builds against `fixtures/` first.
 
 ## UI rules
