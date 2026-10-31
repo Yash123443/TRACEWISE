@@ -7,7 +7,7 @@
 export interface MemoryNode {
   id: string;
   val: string;
-  memoryAddress: string;
+  memoryAddress?: string;
   nextId: string | null;
   status: 'initial' | 'allocated' | 'linked' | 'unreachable' | 'active';
   isHeadTarget?: boolean;

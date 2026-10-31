@@ -2,7 +2,6 @@ import React from 'react';
 import type { LearningQuestion } from '../../types/tracewise';
 import { Card, CardBody, CardHeader } from '../common/Card';
 import { Badge } from '../common/Badge';
-import { BookOpen } from 'lucide-react';
 
 interface QuestionCardProps {
   question: LearningQuestion;
@@ -28,15 +27,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           const found = questionsList.find((item) => item.id === event.target.value);
           if (found) onSelectQuestion(found);
         }}
-        className="text-xs bg-white border border-stone-300 rounded-md px-2.5 py-1 text-stone-800 font-medium"
+        className="w-40 max-w-[40vw] truncate text-xs bg-white border border-stone-300 rounded-md px-2.5 py-1 text-stone-800 font-medium"
       >
-        {questionsList.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+        {questionsList.map((item, index) => <option key={item.id} value={item.id}>Question {index + 1} · {item.category}</option>)}
       </select>
     }>
-      <div className="flex items-center gap-2">
-        <BookOpen className="w-4 h-4 text-stone-700" />
-        <h2 className="font-semibold text-stone-900 text-sm">Problem Specification</h2>
-      </div>
+      <h2 className="font-semibold text-stone-900 text-sm">Question</h2>
     </CardHeader>
     <CardBody className="p-5 space-y-4 flex-1">
       <div className="flex flex-wrap items-center gap-2">

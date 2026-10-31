@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  dismissible?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,12 +20,13 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   maxWidth = 'lg',
+  dismissible = true,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && dismissible) {
         onClose();
       }
     };
@@ -38,7 +40,7 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, dismissible]);
 
   if (!isOpen) return null;
 
@@ -57,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
       aria-labelledby="modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (dismissible && e.target === e.currentTarget) onClose();
       }}
     >
       <div
@@ -76,13 +78,13 @@ export const Modal: React.FC<ModalProps> = ({
               </p>
             )}
           </div>
-          <button
+          {dismissible && <button
             onClick={onClose}
             aria-label="Close dialog"
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 cursor-pointer"
           >
             <X className="w-4 h-4" />
-          </button>
+          </button>}
         </div>
 
         {/* Body */}

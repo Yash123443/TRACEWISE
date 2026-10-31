@@ -31,6 +31,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
   const [dictated, setDictated] = useState(false);
   const [confidence, setConfidence] = useState<number | undefined>();
   const submissionKey = useRef<{ text: string; key: string } | null>(null);
+  const submitLock = useRef(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmitTraceResponse | null>(null);
@@ -72,7 +73,8 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
   };
 
   const handleSubmitConfirm = async (payload: TraceSubmissionPayload) => {
-    if (isSubmitting) return null;
+    if (submitLock.current || isSubmitting) return null;
+    submitLock.current = true;
     setIsSubmitting(true);
     setSubmissionError(null);
     try {
@@ -88,6 +90,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
       setSubmissionError(error instanceof Error ? error.message : 'Could not save this answer. Your text is still here; please retry.');
       return null;
     } finally {
+      submitLock.current = false;
       setIsSubmitting(false);
     }
   };
@@ -106,7 +109,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <section className="lg:col-span-5" aria-label="Problem Specification">
+        <section className="lg:col-span-5" aria-label="Question">
           <QuestionCard question={currentQuestion} questionsList={questionBank ?? []} selectedOption={selectedOption} onSelectOption={setSelectedOption} onSelectQuestion={handleSelectQuestion} />
           {currentQuestion.recommendationReason && <p className="mt-2 text-sm text-stone-600">Recommendation reason: {currentQuestion.recommendationReason}</p>}
         </section>
@@ -125,7 +128,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
         <label className="flex items-center gap-2"><input type="checkbox" checked={dictated} onChange={(event) => setDictated(event.target.checked)} /> I dictated this with Wispr Flow (external dictation)</label>
         <label className="flex items-center gap-2">Confidence (optional): <select value={confidence ?? ''} onChange={(event) => setConfidence(event.target.value ? Number(event.target.value) : undefined)}><option value="">Not provided</option>{[1, 2, 3, 4, 5].map((number) => <option key={number} value={number}>{number}</option>)}</select></label>
       </div>}
-      <SubmissionReviewModal isOpen={isReviewModalOpen} onClose={() => { if (!isSubmitting) setIsReviewModalOpen(false); }} question={currentQuestion} draftText={answerText} onUpdateDraftText={hasOptions ? () => undefined : setExpressionText} onSubmitConfirm={handleSubmitConfirm} isSubmitting={isSubmitting} submissionResult={submissionResult} submissionError={submissionError} onResetSubmission={() => setSubmissionResult(null)} inputMethod={dictated ? 'dictated' : 'typed'} confidence={confidence} onResultDone={(questionId) => { if (questionId) onQuestionChange?.(questionId); onRetry(); }} />
+      <SubmissionReviewModal isOpen={isReviewModalOpen} onClose={() => { if (!isSubmitting) setIsReviewModalOpen(false); }} question={currentQuestion} draftText={answerText} onUpdateDraftText={hasOptions ? () => undefined : setExpressionText} onSubmitConfirm={handleSubmitConfirm} isSubmitting={isSubmitting} submissionResult={submissionResult} submissionError={submissionError} onResetSubmission={() => { setSubmissionResult(null); submissionKey.current = null; }} inputMethod={dictated ? 'dictated' : 'typed'} confidence={confidence} onResultDone={(questionId) => { if (questionId) onQuestionChange?.(questionId); onRetry(); }} />
     </main>
   );
 };

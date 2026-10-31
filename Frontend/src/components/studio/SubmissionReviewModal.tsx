@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import type { LearningQuestion, TraceSubmissionPayload } from '../../types/tracewise';
@@ -30,6 +30,7 @@ export function SubmissionReviewModal({ isOpen, onClose, question, draftText, on
   const [nextTitle, setNextTitle] = useState<string | null>(null);
   const [revisionLabel, setRevisionLabel] = useState<string | null>(null);
   const [submitStarted, setSubmitStarted] = useState(false);
+  const submitLock = useRef(false);
   useEffect(() => setText(draftText), [draftText]);
   useEffect(() => {
     let active = true;
@@ -53,12 +54,14 @@ export function SubmissionReviewModal({ isOpen, onClose, question, draftText, on
   }, [submissionResult]);
 
   const submit = async () => {
-    if (submitStarted || isSubmitting || !text.trim()) return;
+    if (submitLock.current || submitStarted || isSubmitting || !text.trim()) return;
+    submitLock.current = true;
     setSubmitStarted(true);
     onUpdateDraftText(text);
     try {
       await onSubmitConfirm({ questionId: question.id, studentId: 'demo_learner', answerText: text, inputMethod, timeSpentSeconds: 0, invariantsMentioned: [], submittedAt: new Date().toISOString(), ...(confidence === undefined ? {} : { confidence }) } as TraceSubmissionPayload);
     } finally {
+      submitLock.current = false;
       setSubmitStarted(false);
     }
   };
@@ -67,8 +70,18 @@ export function SubmissionReviewModal({ isOpen, onClose, question, draftText, on
   const isUnclear = submissionResult ? ['uncertain', 'insufficient_answer'].includes(submissionResult.evaluation.status) : false;
   const misconception = submissionResult && !isUnclear ? TracewiseApi.misconceptionName(submissionResult.evaluation.misconception_code) : null;
   const footer = submissionResult ? (
-    <Button variant="primary" onClick={() => { const nextId = submissionResult.nextRecommendation?.questionId; onResetSubmission(); close(); onResultDone(nextId); }} disabled={isSubmitting}>
-      {submissionResult.nextRecommendation ? 'Next question' : 'Done'}
+    <Button variant="primary" onClick={() => {
+      if (isUnclear) {
+        onResetSubmission();
+        close();
+        return;
+      }
+      const nextId = submissionResult.nextRecommendation?.questionId;
+      onResetSubmission();
+      close();
+      onResultDone(nextId);
+    }} disabled={isSubmitting}>
+      {isUnclear ? 'Try again' : submissionResult.nextRecommendation ? 'Next question' : 'Done'}
     </Button>
   ) : (
     <div className="flex w-full justify-between">
@@ -77,7 +90,7 @@ export function SubmissionReviewModal({ isOpen, onClose, question, draftText, on
     </div>
   );
 
-  return <Modal isOpen={isOpen} onClose={close} title="Review your answer" subtitle={question.title} maxWidth="xl" footer={footer}>
+  return <Modal isOpen={isOpen} onClose={close} title="Review your answer" subtitle={question.title} maxWidth="xl" footer={footer} dismissible={!submissionResult}>
     {submissionResult ? (
       <div className="space-y-4 text-sm">
         <div><span className="sr-only">Status: </span><span className="inline-flex rounded-full border border-stone-300 bg-stone-100 px-3 py-1 font-semibold text-stone-900">{statusLabel(submissionResult.evaluation.status)}</span></div>

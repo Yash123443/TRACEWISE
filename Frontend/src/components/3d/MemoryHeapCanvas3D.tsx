@@ -11,11 +11,7 @@ export const MemoryHeapCanvas3D: React.FC<MemoryHeapCanvas3DProps> = ({
   interactive = true,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const [hoveredNode, setHoveredNode] = useState<{
-    label: string;
-    address: string;
-    status: string;
-  } | null>(null);
+  const [showIllustrationHint, setShowIllustrationHint] = useState(false);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -193,17 +189,10 @@ export const MemoryHeapCanvas3D: React.FC<MemoryHeapCanvas3DProps> = ({
 
         const intersects = raycaster.intersectObjects(interactiveMeshes);
         if (intersects.length > 0) {
-          const hit = intersects[0].object as THREE.Mesh;
-          const u = hit.userData as { id?: unknown; val?: unknown; addr?: unknown; next?: unknown };
-          const hasNodeDetails = typeof u.val === 'string' && typeof u.addr === 'string' && typeof u.next === 'string';
-          setHoveredNode({
-            label: hasNodeDetails ? `Node '${u.val}'` : 'Memory node details unavailable',
-            address: typeof u.addr === 'string' ? u.addr : 'Address unavailable',
-            status: u.id === 'newNode' ? 'Unlinked' : typeof u.next === 'string' ? `next -> ${u.next}` : 'Next link unavailable',
-          });
+          setShowIllustrationHint(true);
           document.body.style.cursor = 'pointer';
         } else {
-          setHoveredNode(null);
+          setShowIllustrationHint(false);
           document.body.style.cursor = 'default';
         }
       }
@@ -255,14 +244,10 @@ export const MemoryHeapCanvas3D: React.FC<MemoryHeapCanvas3DProps> = ({
       </div>
 
       {/* Interactive Hover HUD Display */}
-      {hoveredNode && (
+      {showIllustrationHint && (
         <div className="absolute bottom-4 right-4 z-20 pointer-events-none animate-in fade-in duration-150">
-          <div className="p-3 rounded-lg bg-white border border-stone-300 font-mono text-xs text-stone-900 shadow-md space-y-1">
-            <div className="text-stone-900 font-bold">{hoveredNode.label}</div>
-            <div className="text-[11px] text-stone-600">
-              Address: <span className="text-stone-900 font-semibold">{hoveredNode.address}</span>
-            </div>
-            <div className="text-[11px] text-teal-800 font-medium">{hoveredNode.status}</div>
+          <div className="max-w-xs p-3 rounded-lg bg-white border border-stone-300 text-xs text-stone-700 shadow-md">
+            Illustration only. Open the Memory Workbench to run a real replay.
           </div>
         </div>
       )}

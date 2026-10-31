@@ -58,7 +58,8 @@ export const LinkedListVisualizer2D: React.FC<LinkedListVisualizer2DProps> = ({
       </div>
 
       {/* Main Node Memory Blocks Row */}
-      <div className="py-8 overflow-x-auto">
+      <div className="py-4 overflow-x-auto" aria-label="Scrollable memory diagram">
+        <p className="px-2 text-xs text-stone-500">Scroll horizontally to view every node.</p>
         <div className="flex items-center gap-4 sm:gap-6 min-w-max px-2 py-4">
           {/* Head Pointer Pill at start */}
           <div className="flex flex-col items-center">
@@ -103,7 +104,7 @@ export const LinkedListVisualizer2D: React.FC<LinkedListVisualizer2DProps> = ({
 
                   {/* Node Address & Status Header */}
                   <div className="flex items-center justify-between text-[10px] font-mono text-stone-500 mb-2 border-b border-stone-200 pb-1">
-                    <span>{node.memoryAddress}</span>
+                    {node.memoryAddress && <span>{node.memoryAddress}</span>}
                     {isUnreachable ? (
                       <span className="text-rose-700 font-semibold flex items-center gap-0.5">
                         <AlertTriangle className="w-2.5 h-2.5" />
