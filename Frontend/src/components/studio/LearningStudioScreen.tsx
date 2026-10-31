@@ -134,10 +134,38 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
           )}
         </section>
       </div>
-      {!hasOptions && <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-white p-3 text-sm">
-        <label className="flex items-center gap-2"><input type="checkbox" checked={dictated} onChange={(event) => setDictated(event.target.checked)} /> I dictated this with Wispr Flow (external dictation)</label>
-        <label className="flex items-center gap-2">Confidence (optional): <select value={confidence ?? ''} onChange={(event) => setConfidence(event.target.value ? Number(event.target.value) : undefined)}><option value="">Not provided</option>{[1, 2, 3, 4, 5].map((number) => <option key={number} value={number}>{number}</option>)}</select></label>
-      </div>}
+      {!hasOptions && (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-2xs text-xs sm:text-sm">
+          <label className="flex items-center gap-2.5 cursor-pointer text-stone-700 select-none">
+            <input
+              type="checkbox"
+              checked={dictated}
+              onChange={(event) => setDictated(event.target.checked)}
+              className="w-4 h-4 rounded text-teal-700 accent-teal-700 cursor-pointer"
+            />
+            <span>I dictated this reasoning with <strong>Wispr Flow</strong> (external dictation tool)</span>
+          </label>
+
+          <div className="flex items-center gap-2 text-stone-600">
+            <label htmlFor="confidence-select" className="font-medium">Confidence:</label>
+            <select
+              id="confidence-select"
+              value={confidence ?? ''}
+              onChange={(event) =>
+                setConfidence(event.target.value ? Number(event.target.value) : undefined)
+              }
+              className="bg-stone-50 border border-stone-300 rounded-lg px-2.5 py-1 text-xs text-stone-800 font-medium focus:outline-none focus:ring-2 focus:ring-stone-400"
+            >
+              <option value="">Not provided (optional)</option>
+              <option value="1">1 - Guessing</option>
+              <option value="2">2 - Low Confidence</option>
+              <option value="3">3 - Moderate</option>
+              <option value="4">4 - High Confidence</option>
+              <option value="5">5 - Completely Certain</option>
+            </select>
+          </div>
+        </div>
+      )}
       <SubmissionReviewModal isOpen={isReviewModalOpen} onClose={() => { if (!isSubmitting) setIsReviewModalOpen(false); }} question={currentQuestion} draftText={answerText} onUpdateDraftText={hasOptions ? () => undefined : setExpressionText} onSubmitConfirm={handleSubmitConfirm} isSubmitting={isSubmitting} submissionResult={submissionResult} submissionError={submissionError} onResetSubmission={() => { setSubmissionResult(null); submissionKey.current = null; }} inputMethod={dictated ? 'dictated' : 'typed'} confidence={confidence} onResultDone={(questionId) => { if (questionId) onQuestionChange?.(questionId); onRetry(); }} onViewMemoryReplay={onViewMemoryReplay} hasReplayTrace={hasReplayTrace} />
     </main>
   );

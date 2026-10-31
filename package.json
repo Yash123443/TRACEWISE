@@ -7,7 +7,7 @@
     "dev": "npm --prefix Frontend run dev",
     "build": "tsc -b && npm --prefix Frontend run build",
     "lint": "oxlint",
-    "test": "vitest run",
+    "test": "vitest run --config Frontend/vite.config.ts --root .",
     "preview": "npm --prefix Frontend run preview",
     "postinstall": "npm --prefix Frontend install"
   },
