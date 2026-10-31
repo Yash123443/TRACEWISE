@@ -1,9 +1,11 @@
-import { OperationProposalSchema, type OperationProposal } from '../contracts/index.js'
+import { EvaluationResultSchema, OperationProposalSchema, type EvaluationResult, type OperationProposal, type Question } from '../contracts/index.js'
 import type { ReplaySetup } from './rules.js'
+import { finalizeEvaluation } from './guard.js'
 
 export interface AiInterpretSuccess { ok: true; proposal: OperationProposal; model: string; promptVersion: string }
 export interface AiInterpretFailure { ok: false; reason: string }
 export type AiInterpreter = (input: { answerText: string; setup: ReplaySetup }) => Promise<AiInterpretSuccess | AiInterpretFailure>
+export type AiAnswerEvaluator = (input: { answerText: string; question: Question }) => Promise<{ ok: true; evaluation: EvaluationResult } | AiInterpretFailure>
 export function createAiInterpreter({ endpoint = '/api/ai/interpret', fetchFn = fetch, timeoutMs = 25000 }: { endpoint?: string; fetchFn?: typeof fetch; timeoutMs?: number } = {}): AiInterpreter {
   return async ({ answerText, setup }) => {
     const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -18,5 +20,19 @@ export function createAiInterpreter({ endpoint = '/api/ai/interpret', fetchFn = 
       if (!operations.some((op) => op.op === 'allocate' && op.node === setup.newNode)) operations.unshift({ op: 'allocate', node: setup.newNode, source_text: 'implicit: node already allocated' })
       return { ok: true, proposal: { ...parsed.data, operations }, model: typeof (json as { model?: unknown }).model === 'string' ? (json as { model: string }).model : 'unknown', promptVersion: typeof (json as { promptVersion?: unknown }).promptVersion === 'string' ? (json as { promptVersion: string }).promptVersion : 'unknown' }
     } catch (error) { return { ok: false, reason: error instanceof DOMException && error.name === 'AbortError' ? 'AI request timed out' : 'AI interpretation was unavailable' }; } finally { clearTimeout(timer) }
+  }
+}
+
+export function createAiAnswerEvaluator({ endpoint = '/api/ai/interpret', fetchFn = fetch, timeoutMs = 25000 }: { endpoint?: string; fetchFn?: typeof fetch; timeoutMs?: number } = {}): AiAnswerEvaluator {
+  return async ({ answerText, question }) => {
+    const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const response = await fetchFn(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ task: 'answer_evaluation', answerText, questionId: question.id, conceptId: question.conceptIds[0], questionText: question.prompt, referenceAnswer: String(question.answerKey) }), signal: controller.signal })
+      if (!response.ok) { const reason = response.status === 503 ? 'AI is not configured' : response.status === 429 ? 'AI rate limit reached' : 'AI assessment was unavailable'; return { ok: false, reason } }
+      const json: unknown = await response.json()
+      const parsed = EvaluationResultSchema.safeParse((json as { evaluation?: unknown }).evaluation)
+      if (!parsed.success) return { ok: false, reason: 'AI returned an invalid assessment' }
+      return { ok: true, evaluation: finalizeEvaluation({ ...parsed.data, concept_id: question.conceptIds[0], misconception_code: null, follow_up_question_id: null, source: 'llm' }, answerText) }
+    } catch (error) { return { ok: false, reason: error instanceof DOMException && error.name === 'AbortError' ? 'AI request timed out' : 'AI assessment was unavailable' } } finally { clearTimeout(timer) }
   }
 }

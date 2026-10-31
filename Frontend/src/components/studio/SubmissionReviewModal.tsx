@@ -236,7 +236,7 @@ export function SubmissionReviewModal({
               {submissionResult.evaluation.source === 'llm' ? (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-teal-700" />
-                  <span>AI Interpreted · Simulator Verified</span>
+                    <span>{submissionResult.trace ? 'AI Interpreted · Simulator Verified' : 'AI Assessed'}</span>
                 </>
               ) : submissionResult.evaluation.source === 'rule' ? (
                 <>

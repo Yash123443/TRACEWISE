@@ -25,10 +25,9 @@ The project includes a student-facing app, a teacher view with simulated class d
 
 The engine owns the question bank, answer evaluation, learner history, mastery estimates, recommendations, revision schedule, and pointer simulation. The frontend adapts those engine results for its screens; it does not calculate mastery itself.
 
-- Questions without a linked-list replay setup use the deterministic rule evaluator.
-- Replay-supported linked-list questions can ask Gemini to interpret the learner's explanation as structured pointer operations.
-- The server validates the proposed operation shape and quoted source text. The engine then runs the operations through its deterministic simulator before accepting the evaluation.
-- If Gemini is not configured or its response cannot be used, the engine falls back to rule-based evaluation and identifies that fallback in the result.
+- Multiple-choice questions use deterministic option checking.
+- Free-text explanation and trace questions try Gemini. Replay-supported linked-list questions ask Gemini for structured pointer operations, then the engine verifies those operations with its deterministic simulator. Other free-text questions ask Gemini for a structured assessment against the question and reference answer.
+- AI responses are schema-checked, and evidence quotes must occur in the learner's submitted text. If Gemini is not configured or its response cannot be used, the engine falls back to rule-based evaluation and identifies that fallback in the result.
 
 Mastery is the deterministic `evidence-v1` estimate derived from recorded attempts. It is not a probabilistic student model or a validated measure of learning outcomes. Browser learner state is stored in `localStorage` when available, with an in-memory fallback if browser storage is unavailable.
 
@@ -45,7 +44,7 @@ Open the local URL printed by Vite (normally `http://localhost:5173/`). If that 
 
 ### Optional Gemini setup
 
-The app works without a Gemini key; replay interpretation falls back to the rule evaluator. To enable the server-side Gemini interpretation path, copy `.env.example` to `.env` and set `GEMINI_API_KEY` in `.env`:
+The app works without a Gemini key; free-text AI assessment falls back to the rule evaluator. To enable the server-side Gemini paths, copy `.env.example` to `.env` and set `GEMINI_API_KEY` in `.env`:
 
 ```sh
 # macOS / Linux
@@ -63,7 +62,7 @@ The checked-in defaults are:
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Primary interpretation model. |
 | `GEMINI_FALLBACK_MODELS` | `gemini-3.8-flash,gemini-flash-lite-latest` | Comma-separated models tried after the primary model. |
 
-Keep the key in `.env`; do not add it to frontend code or a `VITE_` variable. The proxy is registered by `Frontend/vite.config.ts` at `/api/ai/interpret` and keeps the key on the server side. Do not submit personal or sensitive information to an external AI service.
+Keep the key in `.env`; do not add it to frontend code or a `VITE_` variable. The proxy is registered by `Frontend/vite.config.ts` at `/api/ai/interpret` and keeps the key on the server side. It handles both pointer interpretation and free-text assessment requests. Do not submit personal or sensitive information to an external AI service.
 
 The proxy retries selected temporary failures, tries fallback models within a deadline, and returns sanitized errors. If no key is configured it returns `AI_NOT_CONFIGURED`; if the upstream cannot provide a usable response, the engine uses its rule fallback.
 
