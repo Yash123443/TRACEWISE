@@ -5,7 +5,7 @@ import type { ReplaySetup } from './rules.js'
 export interface AiInterpretSuccess { ok: true; proposal: OperationProposal; model: string; promptVersion: string }
 export interface AiInterpretFailure { ok: false; reason: string }
 export type AiInterpreter = (input: { answerText: string; setup: ReplaySetup }) => Promise<AiInterpretSuccess | AiInterpretFailure>
-export function createAiInterpreter({ endpoint = '/api/ai/interpret', fetchFn = fetch, timeoutMs = 12000 }: { endpoint?: string; fetchFn?: typeof fetch; timeoutMs?: number } = {}): AiInterpreter {
+export function createAiInterpreter({ endpoint = '/api/ai/interpret', fetchFn = fetch, timeoutMs = 25000 }: { endpoint?: string; fetchFn?: typeof fetch; timeoutMs?: number } = {}): AiInterpreter {
   return async ({ answerText, setup }) => {
     const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
