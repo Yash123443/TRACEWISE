@@ -1,0 +1,1 @@
+{"status":"correct","concept_id":"linked-list-head","misconception_code":null,"evidence":["set the new node's next to the old head"],"confidence_band":"high","explanation":"The old head remains reachable through the new node.","corrective_explanation":"","follow_up_question_id":null,"clarification_question":null,"source":"fixture"}

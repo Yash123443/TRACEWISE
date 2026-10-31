@@ -1,0 +1,1 @@
+{"status":"uncertain","concept_id":"linked-list-head","misconception_code":null,"evidence":["change the pointer"],"confidence_band":"low","explanation":"The pointer operation is ambiguous.","corrective_explanation":"","follow_up_question_id":null,"clarification_question":"Which pointer should change, and what should it point to?","source":"fixture"}
