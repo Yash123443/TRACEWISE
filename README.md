@@ -1,65 +1,109 @@
-# TRACEWISE
+# Tracewise
 
-## Problem and target users
+Tracewise is a learning app for introductory data structures and algorithms. It helps students explain how they think, then gives feedback about the steps and invariants behind an answer. Its linked-list replay can turn an explanation into pointer operations and show their effect in a deterministic simulator.
 
-TRACEWISE helps introductory C and data-structure learners expose the mental-model error behind an answer. It supports students who need feedback on reasoning and instructors who need a compact class view.
+The project includes a student-facing app, a teacher view with simulated class data, and a tested TypeScript engine. It is designed as a local demo and learning tool, not as a production classroom service.
 
-## What makes TRACEWISE distinct
+## What you can do
 
-TRACEWISE records evidence-backed reasoning diagnoses. Mental Model Replay converts linked-list explanations into operations and verifies them with a deterministic simulator.
+- Work through diagnostic and recommended questions in the **Learn Studio**.
+- See concept mastery, diagnostic progress, recent attempts, and review recommendations in **Overview**.
+- Browse concepts, prerequisites, and tracked misconceptions in the **Concept Map**.
+- Revisit scheduled practice in **Revision** and move the demo clock forward to see tasks become due.
+- Replay linked-list pointer operations in the **Memory Workbench**, step through frames, and compare a learner trace with the reference.
+- Explore simulated cohort summaries and reteaching suggestions in **Teacher**. The cohort contains 24 simulated learners; these are not live class records.
 
-## Features and honest status
+## A typical learner session
 
-| Feature | Status |
-| --- | --- |
-| Diagnostic, concept graph, mastery ledger | Engine implemented and tested |
-| Adaptive selection and spaced repetition | Engine implemented and tested |
-| Misconception tracking and teacher analytics | Engine implemented and tested; class data is simulated |
-| AI interpretation | Engine implemented and tested with verification and fallback |
+1. Start at **Home** and choose **Overview** or **Learn Studio**.
+2. Answer a multiple-choice or explanation question. Explain questions can use a labelled demo sample, which remains editable. Wispr Flow can dictate into the text box as an external tool; there is no Wispr Flow API integration. Where supported, the browser also offers its own speech-recognition control.
+3. Review and submit the answer. The result shows the evaluation, evidence, mastery explanation, and any next recommendation or scheduled revision.
+4. For a linked-list replay result, choose **View memory replay** to inspect the pointer trace in the Workbench.
+5. Use **Revision** to revisit due questions. The demo clock and reset controls affect the local demo learner state.
 
-The student app in `Frontend/` now uses the browser service adapter over the tested engine. Overview, concept map, Studio, revision, teacher analytics, and replay workbench screens read engine service/data outputs. Teacher cohort data is explicitly simulated. The landing page remains static product information.
+## How evaluation works
 
-## How it works
+The engine owns the question bank, answer evaluation, learner history, mastery estimates, recommendations, revision schedule, and pointer simulation. The frontend adapts those engine results for its screens; it does not calculate mastery itself.
 
-AI proposes linked-list pointer operations; the simulator verifies them; deterministic code computes mastery and scheduling.
+- Questions without a linked-list replay setup use the deterministic rule evaluator.
+- Replay-supported linked-list questions can ask Gemini to interpret the learner's explanation as structured pointer operations.
+- The server validates the proposed operation shape and quoted source text. The engine then runs the operations through its deterministic simulator before accepting the evaluation.
+- If Gemini is not configured or its response cannot be used, the engine falls back to rule-based evaluation and identifies that fallback in the result.
 
-## Setup
+Mastery is the deterministic `evidence-v1` estimate derived from recorded attempts. It is not a probabilistic student model or a validated measure of learning outcomes. Browser learner state is stored in `localStorage` when available, with an in-memory fallback if browser storage is unavailable.
+
+## Run locally
+
+Install dependencies from the repository root. The root install also installs the Frontend dependencies.
 
 ```sh
 npm install
-copy .env.example .env
-# Set GEMINI_API_KEY; GEMINI_MODEL is optional.
 npm run dev
-npm test
 ```
 
-`npm run dev` from the repository root starts the Frontend Vite app and its `/api/ai/interpret` proxy on port 5173. The root install also installs Frontend dependencies.
+Open the local URL printed by Vite (normally `http://localhost:5173/`). If that port is already in use, Vite selects another port and prints it in the terminal.
 
-## Demo mode
+### Optional Gemini setup
 
-Use labelled sample responses, the service reset function, and demo time control. Teacher analytics use clearly labelled simulated class data.
+The app works without a Gemini key; replay interpretation falls back to the rule evaluator. To enable the server-side Gemini interpretation path, copy `.env.example` to `.env` and set `GEMINI_API_KEY` in `.env`:
 
-## AI and fallback behaviour
+```sh
+# macOS / Linux
+cp .env.example .env
 
-Gemini uses a server-side proxy, so its key is never browser code. The proxy tries `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and then `GEMINI_FALLBACK_MODELS` when a model is unavailable. Only linked-list replay questions use AI. If AI is unavailable or output fails validation, the rule evaluator is used and says so. Prompt version is `interpret-v4`. AI runs under `npm run dev` or `npm run preview`.
-
-## Limitations
-
-Data is browser localStorage; the class is simulated; rule phrasing coverage is limited. Mastery is a documented `evidence-v1` estimate from recorded evidence, not BKT, and no learning-outcome study has been conducted. Google's free tier may use inputs to improve its models, so do not enter personal information.
-
-Voice is Wispr Flow dictation into the focused text box. There is no Wispr Flow SDK or API integration; the project was built with Wispr Flow dictation plus AI coding agents.
-
-## Team
-
-Team members: _[Teammate 1]_ and _[Teammate 2]_.
-
-## Repository layout
-
+# Windows PowerShell
+Copy-Item .env.example .env
 ```
-Frontend/       Vite + React + Tailwind student and teacher app
-  public/       App public assets
-  src/          App, components, hooks, services, and UI types
-src/engine/     Contracts, data, simulator, learner, selector, evaluation, service, and demo logic with tests
-server/         Gemini interpretation proxy and Vite middleware plugin
-fixtures/       Shared fixture examples
+
+The checked-in defaults are:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | empty | Key used by the development/preview server proxy. |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Primary interpretation model. |
+| `GEMINI_FALLBACK_MODELS` | `gemini-3.8-flash,gemini-flash-lite-latest` | Comma-separated models tried after the primary model. |
+
+Keep the key in `.env`; do not add it to frontend code or a `VITE_` variable. The proxy is registered by `Frontend/vite.config.ts` at `/api/ai/interpret` and keeps the key on the server side. Do not submit personal or sensitive information to an external AI service.
+
+The proxy retries selected temporary failures, tries fallback models within a deadline, and returns sanitized errors. If no key is configured it returns `AI_NOT_CONFIGURED`; if the upstream cannot provide a usable response, the engine uses its rule fallback.
+
+## Project commands
+
+Run these from the repository root:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the student/teacher app and the AI proxy using the Frontend Vite configuration. |
+| `npm test` | Run the engine and proxy tests with Vitest. |
+| `npm run build` | Type-check the engine/server and build the Frontend app. |
+| `npm run lint` | Run Oxlint. |
+| `npm run preview` | Preview the built Frontend app; the Vite proxy middleware is also registered for preview. |
+
+## Project structure
+
+```text
+Frontend/
+  index.html
+  vite.config.ts       # The app's single Vite configuration, including the AI proxy
+  src/
+    App.tsx            # Navigation and screen coordinator
+    components/        # Home, Overview, Studio, Workbench, Concept Map, Revision, Teacher
+    hooks/             # Speech recognition and keyboard shortcuts
+    services/          # Frontend adapter to the engine service
+    types/             # Frontend view types
+src/engine/
+  contracts/           # Schemas and shared engine types
+  data/                # Concepts, misconceptions, and question bank
+  evaluation/          # Rule evaluation, AI interpretation client, and verification pipeline
+  learner/             # Evidence-based mastery and misconception tracking
+  selector/            # Recommendations and revision scheduling
+  service/             # Application service, browser storage, and service types
+  simulator/           # Deterministic pointer-operation replay
+  demo/                # Simulated class analytics and labelled demo samples
+server/
+  aiProxy.ts           # Server-side Gemini request, validation, retry, and fallback chain
+  vitePlugin.ts        # Registers /api/ai/interpret in Vite dev and preview servers
+fixtures/              # Contract and evaluation example JSON
 ```
+
+There is one Vite configuration: `Frontend/vite.config.ts`. Root scripts call the Frontend app or reference this same configuration for test/build tooling.
