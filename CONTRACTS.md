@@ -142,6 +142,7 @@ Import the service implementation through `src/engine/service` and use the typed
 - `getHistory(learnerId)` — retrieve mastery history.
 - `getTeacherAnalytics()` — retrieve class aggregate output and display its data source.
 - `runReplay(operations)` — replay learner operations; call after every learner action.
+- `getReplaySetup(questionId)` from `src/engine/evaluation` — return the supported replay initial list and new-node name, or `null` for questions without replay support. This is a read-only lookup over the existing four replay setups.
 - `resetDemo(learnerId)` — reset demo learner state.
 - `advanceDemoTime(days)` — advance the demo clock.
 

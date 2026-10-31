@@ -17,7 +17,7 @@ TRACEWISE records evidence-backed reasoning diagnoses. Mental Model Replay conve
 | Misconception tracking and teacher analytics | Engine implemented and tested; class data is simulated |
 | AI interpretation | Engine implemented and tested with verification and fallback |
 
-The UI was built separately by a teammate in `src/ui`; no further UI claim is made here.
+The student app in `Frontend/` now uses the browser service adapter over the tested engine. Overview, concept map, Studio, revision, teacher analytics, and replay workbench screens read engine service/data outputs. Teacher cohort data is explicitly simulated. The landing page remains static product information.
 
 ## How it works
 
@@ -32,6 +32,8 @@ copy .env.example .env
 npm run dev
 npm test
 ```
+
+`npm run dev` from the repository root starts the Frontend Vite app and its `/api/ai/interpret` proxy on port 5173. The root install also installs Frontend dependencies.
 
 ## Demo mode
 
@@ -54,6 +56,6 @@ Team members: _[Teammate 1]_ and _[Teammate 2]_.
 ## Repository layout
 
 - `src/engine` — deterministic engine and demo logic
-- `src/ui` — teammate-built interface
+- `Frontend` — Vite student and teacher app
 - `server` — AI proxy
 - `fixtures` — schema examples
