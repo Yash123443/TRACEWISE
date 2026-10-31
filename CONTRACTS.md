@@ -146,3 +146,15 @@ Import the service implementation through `src/engine/service` and use the typed
 - `advanceDemoTime(days)` — advance the demo clock.
 
 Every service method returns a Promise except `runReplay`, which may return a Trace synchronously or as a Promise. UI callers can `await` it either way. Services with time-dependent behavior receive explicit `now: Date`.
+
+## Service behavior
+
+`submitAnswer` is idempotent by `idempotencyKey`: repeating a key returns the stored result without evaluating or changing learner state. `nextRecommendation` and `revisionTask` in its result are nullable when no recommendation or review task exists.
+
+The service also provides `getDiagnosticStatus(learnerId)`, `getQuestion(questionId)`, and `getMisconceptions(learnerId)`. Diagnostic status reports all six diagnostic questions, completion, and the current baseline; unassessed concepts retain `mastery: null`. `runReplay(operations, initial?)` accepts the simulator's optional initial list state.
+
+`ServiceError` uses `QUESTION_NOT_FOUND`, `NO_RECOMMENDATION`, `EVALUATION_FAILED`, and `NOT_IMPLEMENTED` codes. An evaluation failure includes the original submitted `answerText` in its details, allowing the UI to preserve it.
+
+Demo time is a persisted day offset. `advanceDemoTime(days)` adds to the offset and returns `clock() + offset`; `resetDemo(learnerId)` clears both that learner's state and the demo offset. Methods with a `now` argument use that supplied date unchanged. History is returned newest first.
+
+On a learner's first attempt at a concept, history `before` shows mastery 0.5 as a STARTING ESTIMATE (before.attempts is 0), not a measured score. The UI should label it that way.
