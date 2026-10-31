@@ -19,7 +19,7 @@ export const MemoryVisualizer3DPlaceholder: React.FC<MemoryVisualizer3DProps> = 
   snapshot,
   activeStepLabel,
 }) => {
-  const [showWireframe, setShowWireframe] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
   const { unreachableNodeIds, hasCycle } = snapshot;
 
   return (
@@ -57,23 +57,25 @@ export const MemoryVisualizer3DPlaceholder: React.FC<MemoryVisualizer3DProps> = 
 
       {/* 3D WebGL Viewport */}
       <div className="my-4 h-[360px] sm:h-[440px] w-full rounded-lg bg-stone-50 border border-stone-200 relative overflow-hidden">
-        <MemoryHeapCanvas3D />
+          <MemoryHeapCanvas3D snapshot={snapshot} showGrid={showGrid} />
       </div>
 
       {/* 3D Visualizer Controls & Invariant Footer */}
       <div className="pt-3 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500 font-mono">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5 text-stone-600" />
-          <span>Interactive Perspective: Move cursor or scroll to inspect memory layout</span>
+          <span>Live replay frame: node links and reachability follow the selected step.</span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowWireframe(!showWireframe)}
+            type="button"
+            aria-pressed={showGrid}
+            onClick={() => setShowGrid((visible) => !visible)}
             className="text-[11px] text-stone-600 hover:text-stone-900 transition-colors cursor-pointer flex items-center gap-1"
           >
             <Layers className="w-3 h-3" />
-            <span>Coordinate Plane Active</span>
+            <span>{showGrid ? 'Hide coordinate grid' : 'Show coordinate grid'}</span>
           </button>
         </div>
       </div>

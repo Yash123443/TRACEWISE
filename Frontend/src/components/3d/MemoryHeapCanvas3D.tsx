@@ -1,263 +1,243 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+import React, { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
+import type { MemorySnapshot } from '../../types/workbenchTrace'
 
 interface MemoryHeapCanvas3DProps {
-  className?: string;
-  interactive?: boolean;
+  className?: string
+  interactive?: boolean
+  snapshot?: MemorySnapshot
+  showGrid?: boolean
+}
+
+interface VisualNode {
+  id: string
+  val: string
+  address?: string
+  nextId: string | null
+  unreachable: boolean
+  head: boolean
+  isNew: boolean
+}
+
+const makeLabel = (node: VisualNode) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 176
+  const context = canvas.getContext('2d')
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#292524'
+    context.font = 'bold 38px ui-monospace, monospace'
+    context.fillText(node.head ? `HEAD · ${node.val}` : `NODE · ${node.val}`, 14, 52)
+    context.fillStyle = '#57534e'
+    context.font = '30px ui-monospace, monospace'
+    context.fillText(`next → ${node.nextId ?? 'NULL'}`, 14, 104)
+    context.fillText(node.address ?? (node.unreachable ? 'UNREACHABLE' : ''), 14, 150)
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false })
+  const sprite = new THREE.Sprite(material)
+  sprite.scale.set(2.05, 0.7, 1)
+  return sprite
 }
 
 export const MemoryHeapCanvas3D: React.FC<MemoryHeapCanvas3DProps> = ({
   className = '',
   interactive = true,
+  snapshot,
+  showGrid = true,
 }) => {
-  const mountRef = useRef<HTMLDivElement>(null);
-  const [showIllustrationHint, setShowIllustrationHint] = useState(false);
+  const mountRef = useRef<HTMLDivElement>(null)
+  const [hoveredNode, setHoveredNode] = useState<VisualNode | null>(null)
 
   useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
+    const container = mountRef.current
+    if (!container) return
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const scene = new THREE.Scene()
+    const width = container.clientWidth || 800
+    const height = container.clientHeight || 500
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100)
+    camera.position.set(0, 3.6, Math.max(8.2, (snapshot?.nodes.length ?? 4) * 1.8))
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+    renderer.setSize(width, height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1
+    container.appendChild(renderer.domElement)
 
-    // Check user preference for reduced motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scene.add(new THREE.AmbientLight(0xffffff, 2))
+    const mainLight = new THREE.DirectionalLight(0xfffef0, 2.5)
+    mainLight.position.set(4, 8, 6)
+    scene.add(mainLight)
+    const fillLight = new THREE.DirectionalLight(0xe2e8f0, 1.2)
+    fillLight.position.set(-5, 4, -3)
+    scene.add(fillLight)
+    const grid = new THREE.GridHelper(Math.max(16, (snapshot?.nodes.length ?? 4) * 4), 32, 0xd4d4d8, 0xe4e4e7)
+    grid.position.y = -0.55
+    grid.visible = showGrid
+    scene.add(grid)
 
-    // 1. Scene, Camera, Renderer
-    const scene = new THREE.Scene();
+    const newNodeTarget = snapshot?.pointers.find((pointer) => pointer.name === 'newNode')?.targetNodeId
+    const visualNodes: VisualNode[] = snapshot
+      ? snapshot.nodes.map((node) => ({
+          id: node.id,
+          val: node.val,
+          address: node.memoryAddress,
+          nextId: node.nextId ? snapshot.nodes.find((target) => target.id === node.nextId)?.val ?? null : null,
+          unreachable: snapshot.unreachableNodeIds.includes(node.id),
+          head: snapshot.headTargetId === node.id,
+          isNew: newNodeTarget === node.id,
+        }))
+      : [
+          { id: 'newNode', val: 'N', address: '0x1000', nextId: 'A', unreachable: false, head: false, isNew: true },
+          { id: 'head', val: 'A', address: '0x1040', nextId: 'B', unreachable: false, head: true, isNew: false },
+          { id: 'nodeB', val: 'B', address: '0x1080', nextId: 'C', unreachable: false, head: false, isNew: false },
+          { id: 'nodeC', val: 'C', address: '0x10C0', nextId: null, unreachable: false, head: false, isNew: false },
+        ]
 
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 500;
+    const nodeGroup = new THREE.Group()
+    scene.add(nodeGroup)
+    const interactiveMeshes: THREE.Mesh[] = []
+    const positions = new Map<string, THREE.Vector3>()
+    const gap = 2.35
+    const startX = -((visualNodes.length - 1) * gap) / 2
+    const boxGeo = new THREE.BoxGeometry(1.45, 0.78, 1.05)
+    const edgeGeo = new THREE.EdgesGeometry(boxGeo)
 
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
-    camera.position.set(0, 3.6, 8.2);
+    visualNodes.forEach((node, index) => {
+      const position = new THREE.Vector3(startX + index * gap, 0.12, index % 2 === 0 ? 0.12 : -0.12)
+      positions.set(node.id, position)
+      const material = new THREE.MeshStandardMaterial({
+        color: node.unreachable ? 0xffe4e6 : node.isNew ? 0xccfbf1 : 0xffffff,
+        metalness: 0.08,
+        roughness: 0.38,
+      })
+      const mesh = new THREE.Mesh(boxGeo, material)
+      mesh.position.copy(position)
+      mesh.userData.visualNode = node
+      nodeGroup.add(mesh)
+      interactiveMeshes.push(mesh)
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance',
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    container.appendChild(renderer.domElement);
+      const lineMaterial = new THREE.LineBasicMaterial({ color: node.unreachable ? 0xe11d48 : node.head ? 0x292524 : 0xa1a1aa })
+      mesh.add(new THREE.LineSegments(edgeGeo, lineMaterial))
+      const marker = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16),
+        new THREE.MeshStandardMaterial({ color: node.unreachable ? 0xe11d48 : node.head ? 0x292524 : node.isNew ? 0x0f766e : 0x64748b }),
+      )
+      marker.position.y = 0.43
+      mesh.add(marker)
+      const label = makeLabel(node)
+      label.position.set(position.x, 0.98, position.z)
+      nodeGroup.add(label)
+    })
 
-    // 2. Lights - Warm Studio Gallery Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
-    scene.add(ambientLight);
+    visualNodes.forEach((node) => {
+      if (!node.nextId) return
+      const source = positions.get(node.id)
+      const targetNode = snapshot?.nodes.find((item) => item.val === node.nextId)
+      const target = targetNode ? positions.get(targetNode.id) : positions.get(visualNodes.find((item) => item.val === node.nextId)?.id ?? '')
+      if (!source || !target) return
+      const midpoint = source.clone().add(target).multiplyScalar(0.5)
+      midpoint.y += 0.55
+      const curve = new THREE.CatmullRomCurve3([source.clone().add(new THREE.Vector3(0.72, 0.12, 0)), midpoint, target.clone().add(new THREE.Vector3(-0.72, 0.12, 0))])
+      const color = snapshot?.hasCycle && node.unreachable ? 0xe11d48 : 0x292524
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.035, 8, false), new THREE.MeshStandardMaterial({ color }))
+      scene.add(tube)
+      const tangent = curve.getTangentAt(0.92).normalize()
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 12), new THREE.MeshStandardMaterial({ color }))
+      arrow.position.copy(curve.getPointAt(0.96))
+      arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent)
+      scene.add(arrow)
+    })
 
-    const mainLight = new THREE.DirectionalLight(0xfffef0, 2.5);
-    mainLight.position.set(4, 8, 6);
-    scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xe2e8f0, 1.2);
-    fillLight.position.set(-5, 4, -3);
-    scene.add(fillLight);
-
-    // 3. Grid Plane (Subtle memory address coordinate matrix)
-    const gridHelper = new THREE.GridHelper(16, 32, 0xd4d4d8, 0xe4e4e7);
-    gridHelper.position.y = -0.55;
-    scene.add(gridHelper);
-
-    // 4. Memory Nodes (Representing Linked List: N -> A -> B -> C)
-    const nodeData = [
-      { id: 'newNode', val: 'N', addr: '0x1000', next: '0x1040', x: -3.4, z: 0.6, color: 0x0f766e },
-      { id: 'head', val: 'A', addr: '0x1040', next: '0x1080', x: -1.1, z: -0.1, color: 0x18181b },
-      { id: 'nodeB', val: 'B', addr: '0x1080', next: '0x10C0', x: 1.1, z: 0.2, color: 0x18181b },
-      { id: 'nodeC', val: 'C', addr: '0x10C0', next: 'NULL', x: 3.4, z: -0.5, color: 0x18181b },
-    ];
-
-    const nodeGroup = new THREE.Group();
-    scene.add(nodeGroup);
-
-    const interactiveMeshes: THREE.Mesh[] = [];
-
-    // Base box geometry for physical memory cells
-    const boxGeo = new THREE.BoxGeometry(1.25, 0.7, 0.95);
-    const edgesGeo = new THREE.EdgesGeometry(boxGeo);
-
-    nodeData.forEach((data) => {
-      // Main node block - clean warm white porcelain / matte surface
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.1,
-        roughness: 0.35,
-      });
-
-      const mesh = new THREE.Mesh(boxGeo, mat);
-      mesh.position.set(data.x, 0.2, data.z);
-      mesh.userData = data;
-      nodeGroup.add(mesh);
-      interactiveMeshes.push(mesh);
-
-      // Clean crisp edges
-      const lineMat = new THREE.LineBasicMaterial({
-        color: 0xa1a1aa,
-        linewidth: 1,
-      });
-      const wireframe = new THREE.LineSegments(edgesGeo, lineMat);
-      mesh.add(wireframe);
-
-      // Top indicator badge
-      const indicatorGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
-      const indicatorMat = new THREE.MeshStandardMaterial({
-        color: data.color,
-        roughness: 0.3,
-      });
-      const indicator = new THREE.Mesh(indicatorGeo, indicatorMat);
-      indicator.position.set(0, 0.38, 0);
-      mesh.add(indicator);
-    });
-
-    // 5. Clean Architectural Pointer Spline (Connecting nodes)
-    const curvePoints = [
-      new THREE.Vector3(-2.8, 0.2, 0.6),
-      new THREE.Vector3(-2.0, 0.5, 0.25),
-      new THREE.Vector3(-1.1, 0.2, -0.1),
-      new THREE.Vector3(0.0, 0.5, 0.05),
-      new THREE.Vector3(1.1, 0.2, 0.2),
-      new THREE.Vector3(2.25, 0.5, -0.15),
-      new THREE.Vector3(3.4, 0.2, -0.5),
-    ];
-
-    const spline = new THREE.CatmullRomCurve3(curvePoints);
-    const tubeGeo = new THREE.TubeGeometry(spline, 64, 0.032, 8, false);
-    const tubeMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.4,
-      metalness: 0.2,
-    });
-    const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
-    scene.add(tubeMesh);
-
-    // 6. Mouse & Scroll Reactive Camera Positioning
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetCameraX = 0;
-    let targetCameraY = 3.6;
-    let targetCameraZ = 8.2;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      mouseX = x;
-      mouseY = y;
-    };
-
-    const handleScroll = () => {
-      if (prefersReducedMotion) return;
-      const scrollY = window.scrollY || window.pageYOffset;
-      const factor = Math.min(scrollY / 1000, 1.2);
-      targetCameraZ = 8.2 - factor * 1.5;
-      targetCameraY = 3.6 + factor * 0.8;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    if (interactive) {
-      container.addEventListener('mousemove', handleMouseMove);
+    const head = snapshot?.pointers.find((pointer) => pointer.name === 'head')
+    if (head?.targetNodeId) {
+      const headPosition = positions.get(head.targetNodeId)
+      if (headPosition) {
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.6, 8), new THREE.MeshStandardMaterial({ color: 0x0f766e }))
+        stem.position.set(headPosition.x, 1.25, headPosition.z)
+        scene.add(stem)
+        const pointerLabel = makeLabel({ id: 'head-pointer', val: 'HEAD', nextId: null, unreachable: false, head: true, isNew: false })
+        pointerLabel.scale.set(1.3, 0.44, 1)
+        pointerLabel.position.set(headPosition.x, 1.65, headPosition.z)
+        scene.add(pointerLabel)
+      }
     }
 
-    // Raycaster for Hover detection
-    const raycaster = new THREE.Raycaster();
-    const mouseVector = new THREE.Vector2();
-
-    // 7. Animation Loop with Smooth Damping
-    let animationFrameId: number;
-    const clock = new THREE.Clock();
-
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
-
-      // Camera lerp
-      targetCameraX = mouseX * 1.4;
-      camera.position.x += (targetCameraX - camera.position.x) * 0.04;
-      camera.position.y += (targetCameraY + mouseY * 0.5 - camera.position.y) * 0.04;
-      camera.position.z += (targetCameraZ - camera.position.z) * 0.04;
-      camera.lookAt(0, 0.35, 0);
-
-      // Subtle float if motion is allowed
-      if (!prefersReducedMotion) {
-        nodeGroup.position.y = Math.sin(elapsedTime * 0.8) * 0.04;
-        tubeMesh.position.y = Math.sin(elapsedTime * 0.8) * 0.04;
-      }
-
-      // Raycasting for interactive node inspect
+    let mouseX = 0
+    let mouseY = 0
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = container.getBoundingClientRect()
+      mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1
+      mouseY = -(((event.clientY - rect.top) / rect.height) * 2 - 1)
+    }
+    if (interactive) container.addEventListener('mousemove', handleMouseMove)
+    const raycaster = new THREE.Raycaster()
+    const mouseVector = new THREE.Vector2()
+    let animationFrameId = 0
+    const animate = (time: number) => {
+      animationFrameId = requestAnimationFrame(animate)
+      camera.position.x += (mouseX * 1.4 - camera.position.x) * 0.04
+      camera.position.y += (3.6 + mouseY * 0.5 - camera.position.y) * 0.04
+      camera.lookAt(0, 0.35, 0)
+      if (!prefersReducedMotion) nodeGroup.position.y = Math.sin(time / 1000 * 0.8) * 0.035
       if (interactive) {
-        mouseVector.x = mouseX;
-        mouseVector.y = mouseY;
-        raycaster.setFromCamera(mouseVector, camera);
-
-        const intersects = raycaster.intersectObjects(interactiveMeshes);
-        if (intersects.length > 0) {
-          setShowIllustrationHint(true);
-          document.body.style.cursor = 'pointer';
-        } else {
-          setShowIllustrationHint(false);
-          document.body.style.cursor = 'default';
-        }
+        mouseVector.set(mouseX, mouseY)
+        raycaster.setFromCamera(mouseVector, camera)
+        const hit = raycaster.intersectObjects(interactiveMeshes)[0]?.object.userData.visualNode as VisualNode | undefined
+        setHoveredNode((previous) => previous?.id === hit?.id ? previous : hit ?? null)
+        container.style.cursor = hit ? 'pointer' : 'grab'
       }
+      renderer.render(scene, camera)
+    }
+    animate(0)
 
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Resize observer
-    const handleResize = () => {
-      if (!container) return;
-      const newW = container.clientWidth;
-      const newH = container.clientHeight;
-      camera.aspect = newW / newH;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newW, newH);
-    };
-
-    const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(container);
+    const resizeObserver = new ResizeObserver(() => {
+      const nextWidth = container.clientWidth
+      const nextHeight = container.clientHeight
+      if (!nextWidth || !nextHeight) return
+      camera.aspect = nextWidth / nextHeight
+      camera.updateProjectionMatrix()
+      renderer.setSize(nextWidth, nextHeight)
+    })
+    resizeObserver.observe(container)
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('scroll', handleScroll);
-      if (interactive) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
-      resizeObserver.disconnect();
-      document.body.style.cursor = 'default';
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
-      renderer.dispose();
-    };
-  }, [interactive]);
+      cancelAnimationFrame(animationFrameId)
+      container.removeEventListener('mousemove', handleMouseMove)
+      container.style.cursor = ''
+      resizeObserver.disconnect()
+      setHoveredNode(null)
+      scene.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        mesh.geometry?.dispose?.()
+        if (Array.isArray(mesh.material)) mesh.material.forEach((material) => material.dispose())
+        else mesh.material?.dispose?.()
+        const sprite = object as THREE.Sprite
+        if (sprite.material instanceof THREE.SpriteMaterial) sprite.material.map?.dispose()
+      })
+      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement)
+      renderer.dispose()
+    }
+  }, [interactive, snapshot, showGrid])
 
   return (
-    <div className={`relative w-full h-full min-h-[360px] sm:min-h-[420px] overflow-hidden ${className}`}>
-      {/* Three.js Canvas container */}
-      <div ref={mountRef} className="w-full h-full" />
-
-      {/* Floating 3D Telemetry Overlay HUD */}
-      <div className="absolute top-4 left-4 z-20 pointer-events-none">
-        <div className="px-3 py-1.5 rounded-md bg-white/90 border border-stone-300 backdrop-blur-xs font-mono text-[11px] text-stone-700 flex items-center gap-2 shadow-xs font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-600" />
-          <span>3D MEMORY HEAP PERSPECTIVE</span>
+    <div className={`relative h-full min-h-[360px] w-full overflow-hidden ${className}`}>
+      <div ref={mountRef} className="h-full w-full" aria-label={snapshot ? '3D memory replay from current trace' : 'Illustrative 3D memory visualization'} />
+      <div className="pointer-events-none absolute left-4 top-4 z-20">
+        <div className="flex items-center gap-2 rounded-md border border-stone-300 bg-white/90 px-3 py-1.5 font-mono text-[11px] font-medium text-stone-700 shadow-xs backdrop-blur-xs">
+          <span className={`h-2 w-2 rounded-full ${snapshot ? 'bg-teal-700' : 'bg-emerald-600'}`} />
+          <span>{snapshot ? 'LIVE REPLAY · CURRENT FRAME' : 'ILLUSTRATIVE 3D MEMORY VIEW'}</span>
         </div>
       </div>
-
-      {/* Interactive Hover HUD Display */}
-      {showIllustrationHint && (
-        <div className="absolute bottom-4 right-4 z-20 pointer-events-none animate-in fade-in duration-150">
-          <div className="max-w-xs p-3 rounded-lg bg-white border border-stone-300 text-xs text-stone-700 shadow-md">
-            Illustration only. Open the Memory Workbench to run a real replay.
-          </div>
+      {hoveredNode && (
+        <div className="pointer-events-none absolute bottom-4 right-4 z-20 max-w-xs rounded-lg border border-stone-300 bg-white p-3 text-xs text-stone-700 shadow-md">
+          {snapshot ? `Node ${hoveredNode.val}; next points to ${hoveredNode.nextId ?? 'NULL'}${hoveredNode.unreachable ? ' · unreachable from head' : ''}` : 'Illustration only. Open the Memory Workbench to run a real replay.'}
         </div>
       )}
-
-      {/* Parallax & Scroll Cue */}
-      <div className="absolute bottom-4 left-4 z-20 pointer-events-none hidden sm:block">
-        <span className="text-[10px] font-mono text-stone-500 uppercase tracking-wider bg-white/80 px-2 py-0.5 rounded border border-stone-200">
-          Move Cursor to Orbit Perspective
-        </span>
-      </div>
+      {!snapshot && <div className="pointer-events-none absolute bottom-4 left-4 z-20 hidden sm:block"><span className="rounded border border-stone-200 bg-white/80 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-stone-500">Move cursor to orbit perspective</span></div>}
     </div>
-  );
-};
+  )
+}
