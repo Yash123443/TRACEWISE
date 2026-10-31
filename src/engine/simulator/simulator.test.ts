@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { compareTraces, correctInsertAtHead, correctInsertAtHeadWithCapture, diagnoseTrace, runReplay } from './index.js'
-import type { Operation, Trace } from '../contracts/index.js'
+import { TraceSchema, type Operation, type Trace } from '../contracts/index.js'
 
 const op = (operation: Operation): Operation => operation
 const lostOperations: Operation[] = [
@@ -86,7 +86,7 @@ describe('linked-list replay simulator', () => {
     expect(runReplay(correctInsertAtHead('X'), { head: 'P', list: ['P', 'Q'] }).final_list).toEqual(['X', 'P', 'Q'])
   })
 
-  test('matches the correct trace fixture', () => {
+  test('matches and validates the correct trace fixture', () => {
     const operations: Operation[] = [
       { op: 'allocate', node: 'N', source_text: 'allocate N' },
       { op: 'set_next', node: 'N', target: 'head', source_text: 'N.next = head' },
@@ -94,16 +94,14 @@ describe('linked-list replay simulator', () => {
     ]
     const actual = runReplay(operations)
     const expected = fixture('trace-correct.json')
-    expect(actual.steps.map(({ index, operation, nodes, head, reachable, unreachable }) => ({ index, operation, nodes, head, reachable, unreachable })))
-      .toEqual(expected.steps.map(({ index, operation, nodes, head, reachable, unreachable }) => ({ index, operation, nodes, head, reachable, unreachable })))
-    expect([actual.final_head, actual.final_list, actual.unreachable_nodes]).toEqual([expected.final_head, expected.final_list, expected.unreachable_nodes])
+    expect(expected).toEqual(actual)
+    expect(TraceSchema.safeParse(expected).success).toBe(true)
   })
 
-  test('matches the lost-nodes trace fixture', () => {
+  test('matches and validates the lost-nodes trace fixture', () => {
     const actual = runReplay(lostOperations)
     const expected = fixture('trace-lost-nodes.json')
-    expect(actual.steps.slice(1).map(({ index, nodes, head, reachable, unreachable }) => ({ index, nodes, head, reachable, unreachable })))
-      .toEqual(expected.steps.map(({ index, nodes, head, reachable, unreachable }) => ({ index: index + 1, nodes, head, reachable, unreachable })))
-    expect([actual.final_head, actual.final_list, actual.unreachable_nodes]).toEqual([expected.final_head, expected.final_list, expected.unreachable_nodes])
+    expect(expected).toEqual(actual)
+    expect(TraceSchema.safeParse(expected).success).toBe(true)
   })
 })

@@ -59,10 +59,16 @@ Expected behavior: `reachable` and `unreachable` describe nodes at this step. Ed
 Purpose: return all replay steps and the resulting list state.
 
 ```json
-{"steps":[],"final_head":null,"final_list":[],"unreachable_nodes":[]}
+{"steps":[{"index":0,"operation":{"op":"allocate","node":"N","source_text":"allocate N"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":null}},"head":"A","reachable":["A","B","C"],"unreachable":["N"],"note":"Allocated N with next set to null."},{"index":1,"operation":{"op":"set_next","node":"N","target":"head","source_text":"N.next = head"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":"A"}},"head":"A","reachable":["A","B","C"],"unreachable":["N"],"note":"N.next now points to A, which is the head right now."},{"index":2,"operation":{"op":"set_head","target":"N","source_text":"head = N"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":"A"}},"head":"N","reachable":["N","A","B","C"],"unreachable":[],"note":"Head now points to N."}],"final_head":"N","final_list":["N","A","B","C"],"unreachable_nodes":[]}
 ```
 
-Expected behavior: steps retain their operation order; optional `error` reports invalid replay execution. Edge case: a pointer cycle must not loop forever; reachable listing includes each reached node once, and the trace may report an error.
+Expected behavior: steps retain their operation order; optional `error` reports invalid replay execution. Edge case: a pointer cycle must not loop forever; reachable listing includes each reached node once and the final frame note identifies the cycle.
+
+The lost-nodes self-loop fixture for `allocate N`, `head = N`, `N.next = head` is:
+
+```json
+{"steps":[{"index":0,"operation":{"op":"allocate","node":"N","source_text":"allocate N"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":null}},"head":"A","reachable":["A","B","C"],"unreachable":["N"],"note":"Allocated N with next set to null."},{"index":1,"operation":{"op":"set_head","target":"N","source_text":"head = N"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":null}},"head":"N","reachable":["N"],"unreachable":["A","B","C"],"note":"Head now points to N."},{"index":2,"operation":{"op":"set_next","node":"N","target":"head","source_text":"N.next = head"},"nodes":{"A":{"next":"B"},"B":{"next":"C"},"C":{"next":null},"N":{"next":"N"}},"head":"N","reachable":["N"],"unreachable":["A","B","C"],"note":"N.next now points to N, which is the head right now. A cycle is present; traversal stops when a node repeats."}],"final_head":"N","final_list":["N"],"unreachable_nodes":["A","B","C"]}
+```
 
 ### MasteryState
 
