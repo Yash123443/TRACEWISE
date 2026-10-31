@@ -16,6 +16,10 @@ describe('evidence-v1 mastery model', () => {
     expect(result.historyEntries[0].before.mastery).toBe(0.5)
     expect(result.historyEntries[0].reason).toContain('starting estimate')
   })
+  test('uses readable grammar for introductory-level mastery reasons', () => {
+    const result = updateMastery({ state: { arrays: unassessed() }, question: question('intro'), evaluation: evaluation('correct'), attemptId: 'intro-correct', now })
+    expect(result.historyEntries[0].reason).toContain('an introductory-level correct answer')
+  })
   test('incorrect lowers mastery and applies a misconception penalty', () => {
     expect(updateMastery({ state: { arrays: assessed(0.5) }, question: question(), evaluation: evaluation('incorrect', 'ARR'), attemptId: 'a2', now }).newStates[0].mastery).toBe(0.28)
   })

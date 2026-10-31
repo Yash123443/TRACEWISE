@@ -49,9 +49,10 @@ export function updateMastery({ state, question, evaluation, attemptId, confiden
     }
     const after: MasteryState = { ...provisional, status: deriveStatus(provisional, false) }
     const before: MasteryState = wasUnassessed ? { ...existing, mastery: 0.5 } : existing
+    const answerDifficulty = question.difficulty === 'intro' ? 'an introductory-level' : question.difficulty === 'standard' ? 'a standard-level' : 'an advanced-level'
     let reason = evaluation.status === 'uncertain' || evaluation.status === 'insufficient_answer'
       ? 'The answer was unclear, so mastery did not change.'
-      : `A ${question.difficulty} ${evaluation.status}${question.isTransfer ? ' transfer' : ''} response updated the evidence score${evaluation.misconception_code ? `; misconception code ${evaluation.misconception_code} added a penalty` : ''}.`
+      : `${answerDifficulty} ${evaluation.status} answer${question.isTransfer ? ' to a transfer question' : ''} updated the evidence score${evaluation.misconception_code ? `; misconception code ${evaluation.misconception_code} added a penalty` : ''}.`
     if (wasUnassessed) reason += ' The prior 0.5 is the starting estimate.'
     reason += ' This is an estimate from recorded evidence.'
     newStates.push(after)

@@ -33,7 +33,7 @@ const NODES: ConstellationNode[] = [
     invariantRule: 'malloc() blocks must retain active reference pointers until free().',
   },
   {
-    id: 'linked-lists',
+    id: 'linked_lists',
     name: 'Linked List Invariants',
     category: 'Linear Structures',
     x: 78,
@@ -63,10 +63,10 @@ const NODES: ConstellationNode[] = [
 
 const EDGES = [
   { from: 'pointers', to: 'dynamic-memory', label: 'Reference Lifetime' },
-  { from: 'dynamic-memory', to: 'linked-lists', label: 'Heap Allocation' },
-  { from: 'pointers', to: 'linked-lists', label: 'Reachability Chains' },
+  { from: 'dynamic-memory', to: 'linked_lists', label: 'Heap Allocation' },
+  { from: 'pointers', to: 'linked_lists', label: 'Reachability Chains' },
   { from: 'dynamic-memory', to: 'recursion', label: 'Stack vs Heap' },
-  { from: 'linked-lists', to: 'trees', label: 'Branch Induction' },
+  { from: 'linked_lists', to: 'trees', label: 'Branch Induction' },
   { from: 'recursion', to: 'trees', label: 'Traversal Frames' },
 ];
 

@@ -98,7 +98,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {/* Demo Cohort Pill */}
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 border border-stone-200 text-xs text-stone-600">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              <span className="font-mono text-[11px] text-stone-500">CS201 Cohort (Simulated)</span>
+              <span className="font-mono text-[11px] text-stone-500">Simulated class · 24 learners</span>
             </div>
 
             {/* Student profile chip */}
@@ -108,10 +108,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  Local learner
-                </span>
-                <span className="text-[11px] text-teal-700 font-mono leading-tight font-medium">
-                  Engine-backed
+                  Demo learner
                 </span>
               </div>
             </div>
@@ -165,7 +162,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             );
           })}
           <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-stone-500 px-3">
-            <span>Student: Local learner</span>
+            <span>Demo learner</span>
             <span className="font-mono bg-stone-100 text-stone-600 px-2 py-0.5 rounded border border-stone-200">
               Simulated Sandbox
             </span>
