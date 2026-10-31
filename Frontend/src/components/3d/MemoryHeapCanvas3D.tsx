@@ -194,11 +194,12 @@ export const MemoryHeapCanvas3D: React.FC<MemoryHeapCanvas3DProps> = ({
         const intersects = raycaster.intersectObjects(interactiveMeshes);
         if (intersects.length > 0) {
           const hit = intersects[0].object as THREE.Mesh;
-          const u = hit.userData;
+          const u = hit.userData as { id?: unknown; val?: unknown; addr?: unknown; next?: unknown };
+          const hasNodeDetails = typeof u.val === 'string' && typeof u.addr === 'string' && typeof u.next === 'string';
           setHoveredNode({
-            label: `Node '${u.val}'`,
-            address: u.addr,
-            status: u.id === 'newNode' ? 'Unlinked (0x1000)' : `next -> ${u.next}`,
+            label: hasNodeDetails ? `Node '${u.val}'` : 'Memory node details unavailable',
+            address: typeof u.addr === 'string' ? u.addr : 'Address unavailable',
+            status: u.id === 'newNode' ? 'Unlinked' : typeof u.next === 'string' ? `next -> ${u.next}` : 'Next link unavailable',
           });
           document.body.style.cursor = 'pointer';
         } else {

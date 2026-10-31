@@ -20,6 +20,7 @@ interface LearningStudioScreenProps {
   onRetry: () => void;
   onOpenWorkbench?: () => void;
   onTrace?: (trace: Trace) => void;
+  onQuestionChange?: (questionId: string) => void;
 }
 
 export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
@@ -29,6 +30,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
   onRetry,
   onOpenWorkbench,
   onTrace,
+  onQuestionChange,
 }) => {
   const [currentQuestion, setCurrentQuestion] = useState<LearningQuestion>(initialQuestion!);
   const [expressionText, setExpressionText] = useState<string>(initialQuestion?.defaultStarterTrace ?? '');
@@ -69,6 +71,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
 
   const handleSelectQuestion = (q: LearningQuestion) => {
     setCurrentQuestion(q);
+    onQuestionChange?.(q.id);
     setExpressionText(q.defaultStarterTrace);
     setSubmissionResult(null);
     submissionKey.current = null;

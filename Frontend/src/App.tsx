@@ -50,7 +50,7 @@ export default function App() {
     {error && <div role="alert" className="m-4 rounded bg-rose-50 p-3 text-rose-800">{error} <button onClick={() => void refresh()}>Retry</button></div>}
     {tab === 'landing' && <LandingPage onNavigate={setTab} onSelectQuestion={setSelectedId} />}
     {tab === 'overview' && <StudentOverviewScreen key={refreshVersion} loading={loading} onStartLearning={openQuestion} onRefresh={refresh} />}
-    {tab === 'learn' && (selected ? <LearningStudioScreen key={`${selected.id}:${refreshVersion}`} initialQuestion={selected} questionBank={questions} uiState="ready" onRetry={refresh} onTrace={(trace) => setSubmittedTrace({ questionId: selected.id, trace })} onOpenWorkbench={() => setTab('workbench')} /> : <p className="p-8">No diagnostic question is available yet.</p>)}
+    {tab === 'learn' && (selected ? <LearningStudioScreen key={`${selected.id}:${refreshVersion}`} initialQuestion={selected} questionBank={questions} uiState="ready" onRetry={refresh} onQuestionChange={setSelectedId} onTrace={(trace) => setSubmittedTrace({ questionId: selected.id, trace })} onOpenWorkbench={() => setTab('workbench')} /> : <p className="p-8">No diagnostic question is available yet.</p>)}
     {tab === 'concept-map' && <ConceptMapScreen key={refreshVersion} onSelectConceptToLearn={(name) => { const match = questions.find((q) => q.category.includes(name)); void openQuestion(match?.id) }} />}
     {tab === 'revision' && <RevisionScreen key={refreshVersion} onStartRevision={(id) => void openQuestion(id)} onRefresh={refresh} />}
     {tab === 'teacher' && <TeacherScreen key={refreshVersion} />}

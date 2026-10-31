@@ -32,8 +32,9 @@ export const TracewiseApi = {
   getQuestions: async () => {
     const status = await service.getDiagnosticStatus(learnerId)
     if (!status.complete) {
-      const answered = new Set((await service.getHistory(learnerId)).map((entry) => entry.questionId))
-      return (await service.getDiagnosticQuestions()).filter((q) => !answered.has(q.id)).map(mapQuestion)
+      // Keep the full diagnostic set available until the service marks it complete.
+      // Ambiguous answers count as attempts in diagnostic status, but remain revisitable.
+      return (await service.getDiagnosticQuestions()).map(mapQuestion)
     }
     const next = await service.getNextQuestion(learnerId, await demoNow())
     const question = mapQuestion(next.question)
