@@ -55,7 +55,11 @@ Team members: _[Teammate 1]_ and _[Teammate 2]_.
 
 ## Repository layout
 
-- `src/engine` — deterministic engine and demo logic
-- `Frontend` — Vite student and teacher app
-- `server` — AI proxy
-- `fixtures` — schema examples
+```
+Frontend/       Vite + React + Tailwind student and teacher app
+  public/       App public assets
+  src/          App, components, hooks, services, and UI types
+src/engine/     Contracts, data, simulator, learner, selector, evaluation, service, and demo logic with tests
+server/         Gemini interpretation proxy and Vite middleware plugin
+fixtures/       Shared fixture examples
+```
