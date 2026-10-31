@@ -1,0 +1,23 @@
+export interface Misconception { code: string; conceptId: string; name: string; description: string; correction: string }
+
+export const misconceptions: Misconception[] = [
+  { code: 'LL_INSERT_ORDER', conceptId: 'linked_lists', name: 'Insertion order loses list', description: 'Head is changed before the new node links to the old head, losing the list.', correction: 'Point the new node at the old head first, then update head.' },
+  { code: 'LL_SELF_LOOP', conceptId: 'linked_lists', name: 'Self loop at head', description: 'The new node points to itself because head was moved before assigning next.', correction: 'Use the old head before assigning head to the new node.' },
+  { code: 'LL_FORGOT_HEAD_UPDATE', conceptId: 'linked_lists', name: 'Head not updated', description: 'A node is linked but head still points to the old first node.', correction: 'After linking, assign head to the new node.' },
+  { code: 'PTR_ADDR_VS_VALUE', conceptId: 'pointers', name: 'Address versus value', description: 'The address-of and dereference operators are confused.', correction: 'Use & to obtain an address and * to access the pointed-to value.' },
+  { code: 'PTR_NULL_DEREF', conceptId: 'pointers', name: 'Null dereference', description: 'A null pointer is dereferenced as if it points to an object.', correction: 'Check or establish a valid target before dereferencing.' },
+  { code: 'ARR_INDEX_OFF_BY_ONE', conceptId: 'arrays', name: 'Array boundary error', description: 'An index equal to the array length is treated as valid.', correction: 'For length n, valid indexes run from 0 through n - 1.' },
+  { code: 'ARR_POINTER_DECAY', conceptId: 'arrays', name: 'Array pointer decay', description: 'An array expression is mistaken for a full array value in a function call.', correction: 'Arrays usually decay to a pointer to their first element.' },
+  { code: 'STRUCT_DOT_VS_ARROW', conceptId: 'structures', name: 'Dot versus arrow', description: 'A structure pointer is accessed with dot instead of arrow.', correction: 'Use . for a structure value and -> for a pointer to a structure.' },
+  { code: 'DM_MALLOC_NO_FREE', conceptId: 'dynamic_memory', name: 'Allocated memory not freed', description: 'Heap storage is allocated without a matching release when ownership ends.', correction: 'Call free once the allocated object is no longer needed.' },
+  { code: 'STACK_LIFO_FIFO_MIX', conceptId: 'stacks', name: 'Stack order confused', description: 'A stack is treated as first-in first-out.', correction: 'A stack removes the most recently pushed element first.' },
+  { code: 'STACK_POP_EMPTY', conceptId: 'stacks', name: 'Pop empty stack', description: 'Pop is attempted without checking whether the stack has an element.', correction: 'Check for an empty stack before pop.' },
+  { code: 'QUEUE_FIFO_LIFO_MIX', conceptId: 'queues', name: 'Queue order confused', description: 'A queue is treated as last-in first-out.', correction: 'A queue removes the oldest enqueued element first.' },
+  { code: 'QUEUE_ENQUEUE_ORDER', conceptId: 'queues', name: 'Queue enqueue endpoint', description: 'A new queue element is inserted at the front instead of the rear.', correction: 'Enqueue at the rear and dequeue at the front.' },
+  { code: 'TREE_CHILD_ORDER', conceptId: 'trees', name: 'Tree child order', description: 'Traversal order is mistaken when visiting left and right children.', correction: 'Follow the stated traversal order for each child.' },
+  { code: 'TREE_NULL_CHILD', conceptId: 'trees', name: 'Missing child dereference', description: 'A missing child pointer is dereferenced.', correction: 'Check that a child pointer is not NULL before using it.' },
+  { code: 'GRAPH_VISITED_MARK', conceptId: 'graphs', name: 'Graph visited tracking', description: 'Traversal revisits vertices because no visited mark is maintained.', correction: 'Mark a vertex visited before exploring its neighbors.' },
+  { code: 'GRAPH_EDGE_DIRECTION', conceptId: 'graphs', name: 'Edge direction ignored', description: 'A directed edge is treated as usable in both directions.', correction: 'Follow the stored direction for every directed edge.' },
+  { code: 'SEARCH_BINARY_UNSORTED', conceptId: 'searching_sorting', name: 'Binary search on unsorted data', description: 'Binary search is applied before the array is ordered.', correction: 'Sort the data or use linear search when order is unknown.' },
+  { code: 'SORT_SWAP_BOUNDARY', conceptId: 'searching_sorting', name: 'Sort boundary swap', description: 'A sorting pass compares or swaps beyond the current array boundary.', correction: 'Keep comparison indexes within the active array range.' },
+]
