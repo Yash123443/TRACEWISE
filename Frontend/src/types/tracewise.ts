@@ -74,6 +74,7 @@ export interface LearningQuestion {
   };
   keyInvariantsToAddress: string[];
   defaultStarterTrace: string;
+  recommendationReason?: string;
 }
 
 export interface TraceDraft {

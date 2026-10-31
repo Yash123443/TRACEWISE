@@ -6,7 +6,6 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import type { NavigationTab } from '../../types/tracewise';
-import { DEMO_METADATA } from '../../mock/demoData';
 
 interface AppHeaderProps {
   activeTab: NavigationTab;
@@ -105,14 +104,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             {/* Student profile chip */}
             <div className="flex items-center gap-2 pl-2">
               <div className="w-8 h-8 rounded-full bg-stone-200 text-stone-800 border border-stone-300 flex items-center justify-center text-xs font-semibold">
-                {DEMO_METADATA.studentProfile.avatarInitials}
+                DL
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-xs font-semibold text-stone-900 leading-tight">
-                  {DEMO_METADATA.studentProfile.name}
+                  Local learner
                 </span>
                 <span className="text-[11px] text-teal-700 font-mono leading-tight font-medium">
-                  {DEMO_METADATA.studentProfile.activeStreakDays}-day streak
+                  Engine-backed
                 </span>
               </div>
             </div>
@@ -166,7 +165,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             );
           })}
           <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-stone-500 px-3">
-            <span>Student: {DEMO_METADATA.studentProfile.name}</span>
+            <span>Student: Local learner</span>
             <span className="font-mono bg-stone-100 text-stone-600 px-2 py-0.5 rounded border border-stone-200">
               Simulated Sandbox
             </span>

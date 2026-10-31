@@ -1,6 +1,8 @@
 export { finalizeEvaluation } from './guard.js'
 export { normalizeForMatch, firstOriginalMatch } from './normalize.js'
+import { replaySetup } from './rules.js'
 export { rules, replaySetup } from './rules.js'
+export const getReplaySetup = (questionId: string) => replaySetup[questionId] ?? null
 export { parseInsertExplanation, addImplicitOperations } from './parser.js'
 export { evaluateWithRules } from './evaluator.js'
 export type { RuleEvaluation } from './evaluator.js'

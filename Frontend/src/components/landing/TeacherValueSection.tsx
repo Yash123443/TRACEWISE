@@ -46,7 +46,7 @@ export const TeacherValueSection: React.FC<TeacherValueSectionProps> = ({
             For Instructors & TAs
           </Badge>
           <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 tracking-tight">
-            Designed for Educators: Real Cohort Diagnostics
+            Designed for Educators: Engine-Based Cohort Diagnostics
           </h2>
           <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
             Standard automated grading tests whether code compiles. Tracewise reveals what students actually believe is happening inside the computer's memory.
@@ -82,7 +82,7 @@ export const TeacherValueSection: React.FC<TeacherValueSectionProps> = ({
               </h3>
             </div>
             <p className="text-xs text-stone-600 max-w-xl leading-relaxed">
-              Preview simulated class-wide concept mastery, misconception counts, and threshold intervention lists for a 48-student CS201 cohort.
+              Inspect aggregate class mastery, misconception counts, and attention flags from the engine's clearly labelled simulated cohort.
             </p>
           </div>
 

@@ -1,105 +1,21 @@
-import React from 'react';
-import { HeroNextActionCard } from './HeroNextActionCard';
-import { ConceptProgressSection } from './ConceptProgressSection';
-import { DueRevisionSection } from './DueRevisionSection';
-import { RecentActivitySection } from './RecentActivitySection';
-import { DashboardSkeleton } from '../common/Skeleton';
-import { ErrorDisplay } from '../common/StateSwitcher';
-import type { UiSimulationState } from '../common/StateSwitcher';
-import type { StudentOverviewData } from '../../services/apiService';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { TracewiseApi } from '../../services/apiService'
 
-interface StudentOverviewScreenProps {
-  overviewData: StudentOverviewData;
-  uiState: UiSimulationState;
-  onStartLearning: (questionId?: string) => void;
-  onOpenWorkbench?: () => void;
-  onRetry: () => void;
+export function StudentOverviewScreen({ loading, onStartLearning, onRefresh }: { loading: boolean; onStartLearning: (id?: string) => void; onRefresh: () => void }) {
+  const [data, setData] = useState<Awaited<ReturnType<typeof TracewiseApi.getConcepts>> | null>(null)
+  const [history, setHistory] = useState<Awaited<ReturnType<typeof TracewiseApi.getHistory>>>([])
+  const [queue, setQueue] = useState<Awaited<ReturnType<typeof TracewiseApi.getRevisionQueue>> | null>(null)
+  const [diagnostic, setDiagnostic] = useState<Awaited<ReturnType<typeof TracewiseApi.getDiagnosticStatus>> | null>(null)
+  const [recommendation, setRecommendation] = useState<Awaited<ReturnType<typeof TracewiseApi.getNextQuestion>> | null>(null)
+  useEffect(() => { Promise.all([TracewiseApi.getConcepts(), TracewiseApi.getHistory(), TracewiseApi.getRevisionQueue(), TracewiseApi.getDiagnosticStatus(), TracewiseApi.getNextQuestion()]).then(([c, h, q, d, n]) => { setData(c); setHistory(h); setQueue(q); setDiagnostic(d); setRecommendation(n) }).catch(() => {}) }, [])
+  if (loading || !data || !queue || !diagnostic || !recommendation) return <main className="p-8">Loading learner state…</main>
+  return <main className="mx-auto max-w-6xl space-y-6 p-8">
+    <h1 className="text-2xl font-bold">Learner overview</h1>
+    <button className="rounded bg-stone-900 px-4 py-2 text-white" onClick={() => onStartLearning()}>Continue learning</button>
+    <button className="ml-2 rounded border px-4 py-2" onClick={onRefresh}>Refresh</button>
+    <p>Diagnostic: {diagnostic.answered}/{diagnostic.total} answered · Next: {recommendation.question.prompt.split('\n')[0]} ({recommendation.difficulty}) · {recommendation.reason}</p>
+    <section><h2 className="mb-2 text-lg font-semibold">Concept mastery</h2><div className="grid gap-3 md:grid-cols-2">{data.map(({ concept, mastery }) => <article key={concept.id} className="rounded border bg-white p-4"><h3 className="font-semibold">{concept.name}</h3><p>{mastery.mastery === null ? 'Not assessed yet' : `${Math.round(mastery.mastery * 100)}% · ${mastery.status}`}</p><p className="text-sm text-stone-600">Prerequisites: {concept.prerequisites.map((p) => `${p.conceptId} (${p.type})`).join(', ') || 'None'}</p></article>)}</div></section>
+    <section><h2 className="text-lg font-semibold">Revision queue</h2>{[...queue.due, ...queue.upcoming].length ? [...queue.due, ...queue.upcoming].map((task) => <p key={task.id}>{task.conceptId}: {task.reason} · priority {task.priority}</p>) : <p>No scheduled revisions.</p>}</section>
+    <section><h2 className="text-lg font-semibold">Recorded history</h2>{history.length ? history.slice(0, 5).map((entry) => <p key={entry.id}>{entry.conceptId}: {entry.reason}</p>) : <p>No attempts recorded.</p>}</section>
+  </main>
 }
-
-export const StudentOverviewScreen: React.FC<StudentOverviewScreenProps> = ({
-  overviewData,
-  uiState,
-  onStartLearning,
-  onOpenWorkbench,
-  onRetry,
-}) => {
-  if (uiState === 'loading') {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <DashboardSkeleton />
-      </div>
-    );
-  }
-
-  if (uiState === 'error') {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <ErrorDisplay
-          message="Could not synchronize student mastery indices with the evaluator."
-          onRetry={onRetry}
-        />
-      </div>
-    );
-  }
-
-  const { conceptProgress, dueRevisions, recentActivities, metadata } = overviewData;
-
-  const displayRevisions = uiState === 'empty' ? [] : dueRevisions;
-  const displayActivities = uiState === 'empty' ? [] : recentActivities;
-
-  return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
-      {/* Dataset provenance */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-stone-100 border border-stone-200 text-xs text-stone-700 shadow-2xs">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-stone-600 shrink-0" />
-          <span>
-            <strong className="text-stone-900">{metadata.isMockData ? 'Simulated Learner Sandbox:' : 'Local learner data:'}</strong>{' '}
-            <em>{metadata.datasetName}</em>. Engine-backed evaluation active.
-          </span>
-        </div>
-        <span className="font-mono text-[11px] text-stone-600 bg-white px-2.5 py-0.5 rounded border border-stone-200 font-medium">
-          Target: {metadata.studentProfile.targetGoal}
-        </span>
-      </div>
-
-      {/* Hero Next Action */}
-      <HeroNextActionCard
-        onStartLearning={onStartLearning}
-        onOpenWorkbench={onOpenWorkbench}
-        nextAction={overviewData.nextAction}
-      />
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <ConceptProgressSection
-            progressData={conceptProgress}
-            onSelectConcept={() => onStartLearning()}
-          />
-
-          <RecentActivitySection activities={displayActivities} />
-        </div>
-
-        <div className="space-y-8">
-          <DueRevisionSection
-            revisions={displayRevisions}
-            onStartRevision={() => onStartLearning()}
-          />
-
-          {/* Quick Study Tip / Invariant Philosophy */}
-          <div className="p-5 rounded-xl bg-white border border-stone-200 text-xs text-stone-700 space-y-2 shadow-xs">
-            <div className="flex items-center gap-2 font-semibold text-stone-900">
-              <Sparkles className="w-3.5 h-3.5 text-stone-600" />
-              <span>Tracewise Invariant Principle</span>
-            </div>
-            <p className="leading-relaxed text-stone-600">
-              Never rush to memorizing synthetic code templates. During algorithmic exam prep, the highest-yield skill is identifying <strong className="text-stone-900">which invariant remains true</strong> through loop iterations and pointer advances.
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-};
