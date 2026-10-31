@@ -19,13 +19,10 @@ export const DictationToolbar: React.FC<DictationToolbarProps> = ({
 }) => (
   <div className="p-3 bg-stone-50/80 border-b border-stone-200 flex flex-col gap-2.5">
     <div className="flex flex-wrap items-center gap-3">
-      {isSupported ? (
-        <Button type="button" variant={isListening ? 'danger' : 'secondary'} size="sm" onClick={onToggleListening} aria-pressed={isListening}>
-          <Mic className="w-3.5 h-3.5" /> {isListening ? 'Stop dictation' : 'Dictate Reasoning'}
-        </Button>
-      ) : (
-        <p className="text-xs text-stone-600">Dictate with Wispr Flow (external tool) or type</p>
-      )}
+      <p className="text-xs text-stone-600">Dictate with Wispr Flow (external tool) or type</p>
+      {isSupported && <Button type="button" variant={isListening ? 'danger' : 'secondary'} size="sm" onClick={onToggleListening} aria-pressed={isListening}>
+        <Mic className="w-3.5 h-3.5" /> {isListening ? 'Stop browser speech recognition' : 'Use browser speech recognition'}
+      </Button>}
       {isListening && <span className="text-xs text-rose-700">Listening…</span>}
       {designMode && onInsertSampleVoice && (
         <button type="button" onClick={() => onInsertSampleVoice('This is a design preview of dictated text.')} className="text-xs underline">Insert design preview text</button>

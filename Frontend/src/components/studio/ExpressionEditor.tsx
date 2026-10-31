@@ -4,6 +4,8 @@ import { Button } from '../common/Button';
 import { DictationToolbar } from './DictationToolbar';
 import { ArrowRight, FileEdit } from 'lucide-react';
 
+interface DemoSample { id: string; label: string; text: string; expected: string; sample: true; note: string }
+
 interface ExpressionEditorProps {
   value: string;
   onChange: (val: string, inputMethod: 'typed' | 'dictated' | 'hybrid') => void;
@@ -16,11 +18,12 @@ interface ExpressionEditorProps {
   onSubmitReview: () => void;
   onInsertSampleVoice?: (phrase: string) => void;
   isSubmitDisabled?: boolean;
+  demoSamples?: DemoSample[];
 }
 
 export const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
   value, onChange, isListening, isSupported, errorMessage, interimText,
-  onToggleListening, onClearError, onSubmitReview, onInsertSampleVoice, isSubmitDisabled = false,
+  onToggleListening, onClearError, onSubmitReview, onInsertSampleVoice, isSubmitDisabled = false, demoSamples = [],
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0;
@@ -42,6 +45,15 @@ export const ExpressionEditor: React.FC<ExpressionEditorProps> = ({
       </div>
       <DictationToolbar isListening={isListening} isSupported={isSupported} errorMessage={errorMessage} interimText={interimText} onToggleListening={onToggleListening} onClearError={onClearError} designMode={designMode} onInsertSampleVoice={onInsertSampleVoice ?? handleInsertVoice} />
       <div className="p-4">
+        {demoSamples.length > 0 && <label className="mb-3 flex flex-col gap-1 text-xs text-stone-600">Sample answers (demo)
+          <select aria-label="Sample answers (demo)" className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800" value="" onChange={(event) => {
+            const sample = demoSamples.find((item) => item.id === event.target.value);
+            if (sample) onChange(sample.text, 'typed');
+          }}>
+            <option value="">Choose a sample to edit…</option>
+            {demoSamples.map((sample) => <option key={sample.id} value={sample.id}>{sample.label}</option>)}
+          </select>
+        </label>}
         <label htmlFor="reasoning-textarea" className="sr-only">Your explanation</label>
         <textarea
           id="reasoning-textarea" ref={textareaRef} value={value}

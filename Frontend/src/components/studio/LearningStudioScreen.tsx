@@ -11,6 +11,9 @@ import type { UiSimulationState } from '../common/StateSwitcher';
 import { Button } from '../common/Button';
 import { Layers } from 'lucide-react';
 import type { Trace } from '@engine/contracts';
+import { DEMO_SAMPLES } from '@engine/demo/samples';
+
+const LINKED_LIST_REPLAY_QUESTION = 'diag_linked_lists_head_insert';
 
 interface LearningStudioScreenProps {
   initialQuestion?: LearningQuestion;
@@ -20,10 +23,12 @@ interface LearningStudioScreenProps {
   onOpenWorkbench?: () => void;
   onTrace?: (trace: Trace) => void;
   onQuestionChange?: (questionId: string) => void;
+  onViewMemoryReplay?: () => void;
+  hasReplayTrace?: boolean;
 }
 
 export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
-  initialQuestion, questionBank, uiState, onRetry, onOpenWorkbench, onTrace, onQuestionChange,
+  initialQuestion, questionBank, uiState, onRetry, onOpenWorkbench, onTrace, onQuestionChange, onViewMemoryReplay, hasReplayTrace,
 }) => {
   const [currentQuestion, setCurrentQuestion] = useState<LearningQuestion>(initialQuestion!);
   const [expressionText, setExpressionText] = useState(initialQuestion?.defaultStarterTrace ?? '');
@@ -104,6 +109,11 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div><h1 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">Algorithmic Reasoning Studio</h1><p className="text-xs sm:text-sm text-stone-500 mt-0.5">Explain your reasoning in your own words.</p></div>
         <div className="flex items-center gap-3">
+          <Button type="button" variant="secondary" size="sm" onClick={() => {
+            const replayQuestion = questionBank?.find((question) => question.id === LINKED_LIST_REPLAY_QUESTION);
+            if (replayQuestion) handleSelectQuestion(replayQuestion);
+            else void TracewiseApi.getQuestion(LINKED_LIST_REPLAY_QUESTION).then(handleSelectQuestion);
+          }}>Try the linked-list replay question</Button>
           {onOpenWorkbench && <Button type="button" variant="outline" size="sm" onClick={onOpenWorkbench} leftIcon={<Layers className="w-3.5 h-3.5" />}>Interactive Memory Workbench</Button>}
           <div className="hidden sm:flex items-center gap-2 text-xs bg-stone-100 border border-stone-200 px-3 py-1.5 rounded-lg"><span className="w-2 h-2 rounded-full bg-emerald-600" /><span>Studio</span></div>
         </div>
@@ -120,7 +130,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
               <Button type="button" variant="primary" onClick={() => setIsReviewModalOpen(true)} disabled={!selectedOption}>Review your answer</Button>
             </div>
           ) : (
-            <ExpressionEditor value={expressionText} onChange={(value) => setExpressionText(value)} isListening={isListening} isSupported={isSupported} errorMessage={errorMessage} interimText={interimText} onToggleListening={toggleListening} onClearError={clearError} onSubmitReview={() => setIsReviewModalOpen(true)} isSubmitDisabled={!expressionText.trim()} />
+            <ExpressionEditor value={expressionText} onChange={(value) => setExpressionText(value)} isListening={isListening} isSupported={isSupported} errorMessage={errorMessage} interimText={interimText} onToggleListening={toggleListening} onClearError={clearError} onSubmitReview={() => setIsReviewModalOpen(true)} isSubmitDisabled={!expressionText.trim()} demoSamples={currentQuestion.options?.length ? [] : DEMO_SAMPLES} />
           )}
         </section>
       </div>
@@ -128,7 +138,7 @@ export const LearningStudioScreen: React.FC<LearningStudioScreenProps> = ({
         <label className="flex items-center gap-2"><input type="checkbox" checked={dictated} onChange={(event) => setDictated(event.target.checked)} /> I dictated this with Wispr Flow (external dictation)</label>
         <label className="flex items-center gap-2">Confidence (optional): <select value={confidence ?? ''} onChange={(event) => setConfidence(event.target.value ? Number(event.target.value) : undefined)}><option value="">Not provided</option>{[1, 2, 3, 4, 5].map((number) => <option key={number} value={number}>{number}</option>)}</select></label>
       </div>}
-      <SubmissionReviewModal isOpen={isReviewModalOpen} onClose={() => { if (!isSubmitting) setIsReviewModalOpen(false); }} question={currentQuestion} draftText={answerText} onUpdateDraftText={hasOptions ? () => undefined : setExpressionText} onSubmitConfirm={handleSubmitConfirm} isSubmitting={isSubmitting} submissionResult={submissionResult} submissionError={submissionError} onResetSubmission={() => { setSubmissionResult(null); submissionKey.current = null; }} inputMethod={dictated ? 'dictated' : 'typed'} confidence={confidence} onResultDone={(questionId) => { if (questionId) onQuestionChange?.(questionId); onRetry(); }} />
+      <SubmissionReviewModal isOpen={isReviewModalOpen} onClose={() => { if (!isSubmitting) setIsReviewModalOpen(false); }} question={currentQuestion} draftText={answerText} onUpdateDraftText={hasOptions ? () => undefined : setExpressionText} onSubmitConfirm={handleSubmitConfirm} isSubmitting={isSubmitting} submissionResult={submissionResult} submissionError={submissionError} onResetSubmission={() => { setSubmissionResult(null); submissionKey.current = null; }} inputMethod={dictated ? 'dictated' : 'typed'} confidence={confidence} onResultDone={(questionId) => { if (questionId) onQuestionChange?.(questionId); onRetry(); }} onViewMemoryReplay={onViewMemoryReplay} hasReplayTrace={hasReplayTrace} />
     </main>
   );
 };

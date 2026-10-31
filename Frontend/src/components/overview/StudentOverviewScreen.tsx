@@ -27,7 +27,7 @@ export function StudentOverviewScreen({ loading, onStartLearning, onRefresh }: {
     <h1 className="text-2xl font-bold">Learner overview</h1>
     <Card><CardBody className="flex flex-wrap items-center justify-between gap-4">
       <p>Diagnostic: {diagnostic.answered}/{diagnostic.total} answered · Next: {recommendation.question.prompt.split('\n')[0]} ({recommendation.difficulty}) · {recommendation.reason}</p>
-      <div className="flex gap-2"><Button type="button" onClick={() => onStartLearning()} variant="primary">Continue learning</Button><Button type="button" onClick={onRefresh} variant="outline">Refresh</Button></div>
+      <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => onStartLearning()} variant="primary">Continue learning</Button><Button type="button" onClick={() => onStartLearning('diag_linked_lists_head_insert')} variant="secondary">Try the linked-list replay question</Button><Button type="button" onClick={onRefresh} variant="outline">Refresh</Button></div>
     </CardBody></Card>
     <section className="space-y-3">
       <h2 className="text-lg font-semibold">Concept mastery</h2>
@@ -46,5 +46,9 @@ export function StudentOverviewScreen({ loading, onStartLearning, onRefresh }: {
       <Card><CardHeader><h2 className="font-semibold">Revision queue</h2></CardHeader><CardBody className="space-y-2">{[...queue.due, ...queue.upcoming].length ? [...queue.due, ...queue.upcoming].map((task) => <p key={task.id}>{TracewiseApi.conceptName(task.conceptId)}: {task.reason} · priority {task.priority}</p>) : <p>No scheduled revisions.</p>}</CardBody></Card>
       <Card><CardHeader><h2 className="font-semibold">Recorded history</h2></CardHeader><CardBody className="space-y-2">{history.length ? history.slice(0, 5).map((entry) => <p key={entry.id}>{TracewiseApi.conceptName(entry.conceptId)}: {entry.reason}</p>) : <p>No attempts recorded.</p>}</CardBody></Card>
     </section>
+    <footer className="space-y-1 border-t border-stone-200 pt-4 text-xs text-stone-600">
+      <p>Teacher class data is simulated.</p>
+      <p>Voice is Wispr Flow dictation into the text box; there is no Wispr Flow API integration.</p>
+    </footer>
   </main>
 }

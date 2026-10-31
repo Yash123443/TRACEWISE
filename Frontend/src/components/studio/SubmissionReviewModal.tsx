@@ -21,10 +21,10 @@ const readableDate = (date: string) => {
   return Number.isNaN(parsed.getTime()) ? 'date unavailable' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(parsed);
 };
 
-export function SubmissionReviewModal({ isOpen, onClose, question, draftText, onUpdateDraftText, onSubmitConfirm, isSubmitting, submissionResult, submissionError, onResetSubmission, inputMethod, confidence, onResultDone }: {
+export function SubmissionReviewModal({ isOpen, onClose, question, draftText, onUpdateDraftText, onSubmitConfirm, isSubmitting, submissionResult, submissionError, onResetSubmission, inputMethod, confidence, onResultDone, onViewMemoryReplay, hasReplayTrace }: {
   isOpen: boolean; onClose: () => void; question: LearningQuestion; draftText: string; onUpdateDraftText: (text: string) => void;
   onSubmitConfirm: (payload: TraceSubmissionPayload) => Promise<SubmitTraceResponse | null>; isSubmitting: boolean; submissionResult: SubmitTraceResponse | null;
-  submissionError?: string | null; onResetSubmission: () => void; inputMethod: 'typed' | 'dictated'; confidence?: number; onResultDone: (questionId?: string) => void
+  submissionError?: string | null; onResetSubmission: () => void; inputMethod: 'typed' | 'dictated'; confidence?: number; onResultDone: (questionId?: string) => void; onViewMemoryReplay?: () => void; hasReplayTrace?: boolean
 }) {
   const [text, setText] = useState(draftText);
   const [nextTitle, setNextTitle] = useState<string | null>(null);
@@ -99,6 +99,7 @@ export function SubmissionReviewModal({ isOpen, onClose, question, draftText, on
         {!isUnclear && submissionResult.evaluation.corrective_explanation && <p>{submissionResult.evaluation.corrective_explanation}</p>}
         {isUnclear ? <p>Clarification: {submissionResult.evaluation.clarification_question ?? 'Please restate your reasoning.'}</p> : misconception && <p><span className="font-medium">Misconception:</span> {misconception}</p>}
         <p><span className="font-medium">Source:</span> {submissionResult.evaluation.source === 'llm' ? 'Checked by AI, verified by simulator' : submissionResult.evaluation.source === 'rule' ? 'Checked by rules' : 'Sample fixture'}</p>
+        {hasReplayTrace && onViewMemoryReplay && <Button type="button" variant="secondary" onClick={onViewMemoryReplay}>View memory replay</Button>}
         <p><span className="font-medium">Why did mastery change?</span> {submissionResult.historyEntry.reason}</p>
         <div className="space-y-1">
           <p><span className="font-medium">Next recommendation:</span> {submissionResult.nextRecommendation ? (nextTitle ?? 'Loading question…') : 'None'}</p>
