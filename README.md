@@ -39,7 +39,7 @@ Use labelled sample responses, the service reset function, and demo time control
 
 ## AI and fallback behaviour
 
-Gemini uses a server-side proxy, so its key is never browser code. The proxy tries `GEMINI_MODEL` and then `GEMINI_FALLBACK_MODELS` when a model is unavailable. Only linked-list replay questions use AI. If AI is unavailable or output fails validation, the rule evaluator is used and says so. AI runs under `npm run dev` or `npm run preview`.
+Gemini uses a server-side proxy, so its key is never browser code. The proxy tries `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and then `GEMINI_FALLBACK_MODELS` when a model is unavailable. Only linked-list replay questions use AI. If AI is unavailable or output fails validation, the rule evaluator is used and says so. Prompt version is `interpret-v4`. AI runs under `npm run dev` or `npm run preview`.
 
 ## Limitations
 

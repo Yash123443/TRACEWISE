@@ -161,7 +161,7 @@ On a learner's first attempt at a concept, history `before` shows mastery 0.5 as
 
 ## AI evaluation
 
-An evaluation with source `llm` means AI interpreted the explanation into pointer operations and a deterministic simulator verified the result. Source `rule` with an `AI interpretation was unavailable` sentence indicates rule-based fallback. Mastery never depends on unverified AI output. The development server proxies `/api/ai/interpret`; its API key remains server-side in `.env`. It tries `GEMINI_MODEL` (default `gemini-flash-lite-latest`) and then the comma-separated `GEMINI_FALLBACK_MODELS` chain. The AI path works only under `npm run dev` or `npm run preview`.
+An evaluation with source `llm` means AI interpreted the explanation into pointer operations and a deterministic simulator verified the result. Source `rule` with an `AI interpretation was unavailable` sentence indicates rule-based fallback. Mastery never depends on unverified AI output. The development server proxies `/api/ai/interpret`; its API key remains server-side in `.env`. It tries `GEMINI_MODEL` (default `gemini-3.5-flash-lite`) and then the comma-separated `GEMINI_FALLBACK_MODELS` chain. Prompt version: `interpret-v4`. The AI path works only under `npm run dev` or `npm run preview`.
 
 ## Teacher analytics
 
