@@ -1,0 +1,7 @@
+export { runReplay } from './simulator.js'
+export type { ReplayInitialState } from './simulator.js'
+export { correctInsertAtHead, correctInsertAtHeadWithCapture } from './reference.js'
+export { diagnoseTrace } from './diagnose.js'
+export type { TraceDiagnosis } from './diagnose.js'
+export { compareTraces } from './compare.js'
+export type { TraceComparison } from './compare.js'
