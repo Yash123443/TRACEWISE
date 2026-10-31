@@ -20,7 +20,14 @@ export function parseInsertExplanation(text: string, setup: ReplaySetup): Operat
     if (/\b(?:next|head|point|link|top)\b/i.test(clause)) return { status: 'uncertain', operations: [], clarification_question: `Please clarify this pointer step: “${clause}”.` }
   }
   if (!operations.length) return { status: 'insufficient_answer', operations: [], clarification_question: 'Please describe the pointer updates in order.' }
-  if (operations.some((op) => op.op === 'set_next' && op.target === '$old_head')) operations.unshift({ op: 'capture', name: 'old_head', from: 'head', source_text: 'implicit capture of the head before any change' })
+  return addImplicitOperations({ status: 'identified', operations, clarification_question: null }, setup)
+}
+
+/** Shared deterministic setup used for both rule and AI-proposed operations. */
+export function addImplicitOperations(proposal: OperationProposal, setup: ReplaySetup): OperationProposal {
+  if (proposal.status !== 'identified') return proposal
+  const operations = [...proposal.operations]
+  if (operations.some((op) => op.op === 'set_next' && op.target === '$old_head') && !operations.some((op) => op.op === 'capture' && op.name === 'old_head')) operations.unshift({ op: 'capture', name: 'old_head', from: 'head', source_text: 'implicit capture of the head before any change' })
   if (!operations.some((op) => op.op === 'allocate')) operations.unshift({ op: 'allocate', node: setup.newNode, source_text: 'implicit: node already allocated' })
-  return { status: 'identified', operations, clarification_question: null }
+  return { ...proposal, operations }
 }

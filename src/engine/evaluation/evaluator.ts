@@ -1,10 +1,10 @@
 import type { EvaluationResult, Question } from '../contracts/index.js'
-import { misconceptions } from '../data/misconceptions.js'
 import { questions } from '../data/questions.js'
-import { compareTraces, correctInsertAtHead, diagnoseTrace, runReplay } from '../simulator/index.js'
+import { runReplay } from '../simulator/index.js'
 import { finalizeEvaluation } from './guard.js'
 import { firstOriginalMatch, normalizeForMatch } from './normalize.js'
 import { parseInsertExplanation } from './parser.js'
+import { evaluateReplayProposal } from './pipeline.js'
 import { replaySetup, rules } from './rules.js'
 
 export interface RuleEvaluation { evaluation: EvaluationResult; proposal?: ReturnType<typeof parseInsertExplanation>; trace?: ReturnType<typeof runReplay>; correctTrace?: ReturnType<typeof runReplay> }
@@ -29,20 +29,7 @@ export function evaluateWithRules({ question, answerText, reasoningText }: { que
   const setup = replaySetup[question.id]
   if (setup) {
     const proposal = parseInsertExplanation(answerText, setup)
-    if (proposal.status !== 'identified') return { proposal, evaluation: finish(base(question, proposal.status === 'insufficient_answer' ? 'insufficient_answer' : 'uncertain', { explanation: 'The pointer steps need clarification.', clarification_question: proposal.clarification_question })) }
-    const trace = runReplay(proposal.operations, setup.initial)
-    const correctTrace = runReplay(correctInsertAtHead(setup.newNode), setup.initial)
-    if (trace.error) return { proposal, trace, correctTrace, evaluation: finish(base(question, 'uncertain', { explanation: 'The proposed steps could not be simulated.', clarification_question: 'Please clarify the pointer operations.' })) }
-    const diagnosis = diagnoseTrace(trace, setup.newNode)
-    const comparison = compareTraces(trace, correctTrace)
-    const correct = JSON.stringify(trace.final_list) === JSON.stringify([setup.newNode, ...setup.initial.list])
-    if (correct) return { proposal, trace, correctTrace, evaluation: finish(base(question, 'correct', { explanation: 'The simulated outcome is correct.', evidence: proposal.operations.filter((op) => op.source_text !== 'implicit: node already allocated').map((op) => op.source_text), follow_up_question_id: followUp(question, 'correct') })) }
-    if (diagnosis.code) {
-      const correction = misconceptions.find((item) => item.code === diagnosis.code)?.correction ?? ''
-      const evidence = proposal.operations.filter((op) => op.op === 'set_head' || op.op === 'set_next').map((op) => op.source_text)
-      return { proposal, trace, correctTrace, evaluation: finish(base(question, 'incorrect', { misconception_code: diagnosis.code, evidence, explanation: `${diagnosis.explanation} ${comparison.explanation}`, corrective_explanation: correction, follow_up_question_id: followUp(question, 'incorrect') })) }
-    }
-    return { proposal, trace, correctTrace, evaluation: finish(base(question, 'uncertain', { explanation: diagnosis.explanation, clarification_question: 'Please clarify the pointer operation order.' })) }
+    return evaluateReplayProposal(question, proposal, setup, answerText, reasoningText)
   }
   if (question.type === 'explain' && answerText.trim().split(/\s+/).length < 4) return { evaluation: finish(base(question, 'insufficient_answer', { explanation: 'The answer is too short to assess.', clarification_question: 'Please explain your reasoning.' })) }
   const rule = rules[question.id]

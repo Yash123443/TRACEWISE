@@ -158,3 +158,7 @@ The service also provides `getDiagnosticStatus(learnerId)`, `getQuestion(questio
 Demo time is a persisted day offset. `advanceDemoTime(days)` adds to the offset and returns `clock() + offset`; `resetDemo(learnerId)` clears both that learner's state and the demo offset. Methods with a `now` argument use that supplied date unchanged. History is returned newest first.
 
 On a learner's first attempt at a concept, history `before` shows mastery 0.5 as a STARTING ESTIMATE (before.attempts is 0), not a measured score. The UI should label it that way.
+
+## AI evaluation
+
+An evaluation with source `llm` means AI interpreted the explanation into pointer operations and a deterministic simulator verified the result. Source `rule` with an `AI interpretation was unavailable` sentence indicates rule-based fallback. Mastery never depends on unverified AI output. The development server proxies `/api/ai/interpret`; its API key remains server-side in `.env`. The AI path works only under `npm run dev` or `npm run preview`.
