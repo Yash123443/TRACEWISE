@@ -140,9 +140,13 @@ Import the service implementation through `src/engine/service` and use the typed
 - `getNextQuestion(learnerId, now)` — retrieve the next recommendation.
 - `getRevisionQueue(learnerId, now)` — retrieve due and upcoming reviews.
 - `getHistory(learnerId)` — retrieve mastery history.
+- `getAttempts(learnerId)` — retrieve saved answer text and evaluation provenance for the learner's activity view.
 - `getTeacherAnalytics()` — retrieve class aggregate output and display its data source.
 - `runReplay(operations)` — replay learner operations; call after every learner action.
+- `completeRevision(learnerId, revisionId, now)` and `reopenRevision(learnerId, revisionId)` — persist revision completion and undo.
 - `resetDemo(learnerId)` — reset demo learner state.
 - `advanceDemoTime(days)` — advance the demo clock.
 
 Every service method returns a Promise except `runReplay`, which may return a Trace synchronously or as a Promise. UI callers can `await` it either way. Services with time-dependent behavior receive explicit `now: Date`.
+
+The browser implementation is exported from `src/engine/service/index.ts`. It accepts a `TracewiseStorage` adapter; the default `BrowserTracewiseStorage` persists learner state in `localStorage`, and `MemoryTracewiseStorage` is available for isolated callers. The service is local browser storage, not an HTTP backend.

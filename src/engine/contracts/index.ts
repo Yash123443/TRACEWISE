@@ -61,7 +61,7 @@ export const AttemptSchema = z.object({
 export type Attempt = z.infer<typeof AttemptSchema>
 export const StudentMisconceptionSchema = z.object({ code: z.string(), status: z.enum(['suspected', 'recurring', 'needs_verification', 'corrected']), count: z.number().int().nonnegative(), evidenceAttemptIds: z.array(z.string()) })
 export type StudentMisconception = z.infer<typeof StudentMisconceptionSchema>
-export const RevisionTaskSchema = z.object({ id: z.string(), conceptId: z.string(), questionId: z.string(), dueDate: z.string().datetime(), priority: z.number(), reason: z.string(), status: z.enum(['scheduled', 'due', 'done']) })
+export const RevisionTaskSchema = z.object({ id: z.string(), conceptId: z.string(), questionId: z.string(), dueDate: z.string().datetime(), priority: z.number(), reason: z.string(), status: z.enum(['scheduled', 'due', 'done']), completedAt: z.string().datetime().optional() })
 export type RevisionTask = z.infer<typeof RevisionTaskSchema>
 export const TeacherAggregateSchema = z.object({
   dataSource: z.enum(['simulated', 'live']), learnerCount: z.number().int().nonnegative(),
