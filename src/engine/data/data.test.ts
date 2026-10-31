@@ -50,6 +50,11 @@ describe('syllabus data', () => {
     expect(questions.filter((question) => question.type === 'mcq').every((question) => question.options?.includes(question.answerKey as string))).toBe(true)
   })
 
+  test('maps only wrong mcq options to misconceptions', () => {
+    const mcqQuestions = questions.filter((question) => question.type === 'mcq')
+    expect(mcqQuestions.every((question) => Object.keys(question.misconceptionMap).every((option) => question.options?.includes(option) && option !== question.answerKey))).toBe(true)
+  })
+
   test('covers every concept and includes replay and transfer questions', () => {
     expect(concepts.every((concept) => questions.filter((question) => question.conceptIds.includes(concept.id)).length >= 2)).toBe(true)
     expect(questions.filter((question) => question.supportsReplay).length).toBeGreaterThanOrEqual(2)
